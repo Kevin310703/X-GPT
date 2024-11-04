@@ -70,3 +70,31 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.text-custom {
+  --tw-text-opacity: 1;
+  color: #1B2559;
+  text-align: center;
+}
+
+.text-color-1B2559 {
+  color: #1B2559;
+  --tw-text-opacity: 1;
+}
+
+.color-purple {
+  color: #4318FF;
+}
+
+.h-520px {
+  max-height: 520px;
+}

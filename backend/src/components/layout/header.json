@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_layout_headers",
+  "info": {
+    "displayName": "header",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "Model": {
+      "type": "enumeration",
+      "enum": [
+        "T5",
+        "Stable Diffusion"
+      ]
+    },
+    "Theme": {
+      "type": "boolean",
+      "default": true
+    },
+    "Avatar": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  }
+}

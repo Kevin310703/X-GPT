@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_layout_chattings",
+  "info": {
+    "displayName": "Chatting",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "question": {
+      "type": "text",
+      "maxLength": 700
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "answer": {
+      "type": "text"
+    },
+    "avtChatbot": {
+      "allowedTypes": [
+        "images"
+      ],
+      "type": "media",
+      "multiple": true
+    }
+  }
+}
