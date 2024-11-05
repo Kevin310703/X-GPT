@@ -25,38 +25,88 @@ export default function Home() {
   const [header, setHeader] = useState<HeaderBlock | null>(null);
   const [footer, setFooter] = useState<FooterBlock | null>(null);
   const [selectedModel, setSelectedModel] = useState("T5");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const strapiData = await getStrapiData("/api/home-page?populate=*");
-      if (strapiData && strapiData.data && strapiData.data.blocks) {
-        // Extract chat messages
-        const chatMessages = strapiData.data.blocks
-          .filter((block: PageBlock): block is ChattingBlock => block.__component === "layout.chatting")
-          .map((block: ChattingBlock) => ({
-            question: block.question,
-            answer: block.answer,
-          }));
-        setChatData(chatMessages);
+    const userLoggedIn = false; // Thay đổi giá trị này thành true để giả lập đã đăng nhập
+    setIsLoggedIn(userLoggedIn);
 
-        // Extract header and footer if available
-        const headerData = strapiData.data.blocks.find(
-          (block: PageBlock) => block.__component === "layout.header"
-        ) as HeaderBlock;
-        const footerData = strapiData.data.blocks.find(
-          (block: PageBlock) => block.__component === "layout.footer"
-        ) as FooterBlock;
+    if (userLoggedIn) {
+      const fetchData = async () => {
+        const strapiData = await getStrapiData("/api/home-page?populate=*");
+        if (strapiData && strapiData.data && strapiData.data.blocks) {
+          // Extract chat messages
+          const chatMessages = strapiData.data.blocks
+            .filter((block: PageBlock): block is ChattingBlock => block.__component === "layout.chatting")
+            .map((block: ChattingBlock) => ({
+              question: block.question,
+              answer: block.answer,
+            }));
+          setChatData(chatMessages);
 
-        setHeader(headerData || null);
-        setFooter(footerData || null);
-      }
-    };
-    fetchData();
+          // Extract header and footer if available
+          const headerData = strapiData.data.blocks.find(
+            (block: PageBlock) => block.__component === "layout.header"
+          ) as HeaderBlock;
+          const footerData = strapiData.data.blocks.find(
+            (block: PageBlock) => block.__component === "layout.footer"
+          ) as FooterBlock;
+
+          setHeader(headerData || null);
+          setFooter(footerData || null);
+        }
+      };
+
+      fetchData();
+    }
   }, []);
 
   const handleModelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedModel(event.target.value);
   };
+
+  if (!isLoggedIn) {
+    // Giao diện khi chưa đăng nhập
+    return (
+      <div className="relative flex flex-col items-center justify-center h-screen bg-gray-50">
+        {/* Header */}
+        <header className="w-full p-4 bg-white shadow-md flex justify-between items-center">
+          {/* Chọn mô hình */}
+          <div className="flex justify-center items-center">
+            <h2 className="text-xl text-[#1B2559] text-center">
+              <span className="font-bold">X-OR</span> AI GENERATIVE
+            </h2>
+  
+            <select
+              id="model-select"
+              value={selectedModel}
+              onChange={handleModelChange}
+              className="text-lg font-bold bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 
+              focus:ring-blue-500 focus:border-blue-500 p-2 transition duration-150 ease-in-out ml-4"
+            >
+              <option value="T5">T5</option>
+              <option value="Stable Diffusion">Stable Diffusion</option>
+            </select>
+          </div>
+  
+          {/* Đăng nhập và Đăng ký */}
+          <div className="flex gap-4">
+            <button className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] text-white font-semibold rounded px-4 py-2 hover:bg-gray-800">
+              Sign In
+            </button>
+            <button className="border border-gray-300 rounded px-4 py-2 hover:bg-gray-100">
+              Sign Up
+            </button>
+          </div>
+        </header>
+  
+        {/* Chatting component */}
+        <div className="flex-grow mt-4 p-6 max-w-full w-full overflow-auto">
+          <Chatting data={chatData} selectedModel={selectedModel} isLoggedIn={isLoggedIn} />
+        </div>
+      </div>
+    );
+  }  
 
   return (
     <div className="flex h-screen">
@@ -181,7 +231,7 @@ export default function Home() {
           {/* Chatting component */}
           <div className="flex-grow">
             {chatData.length > 0 ? (
-              <Chatting data={chatData} selectedModel={selectedModel} />
+              <Chatting data={chatData} selectedModel={selectedModel} isLoggedIn={isLoggedIn} />
             ) : (
               <div>No chat data available.</div>
             )}
