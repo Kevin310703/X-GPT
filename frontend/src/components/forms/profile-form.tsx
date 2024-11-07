@@ -1,10 +1,12 @@
 "use client";
 import React from "react";
 import { cn } from "@/lib/utils";
-
+import { useActionState } from "react";
+import { updateProfileAction } from "@/app/data/actions/profile-actions";
 import { SubmitButton } from "@/components/custom/submit-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { StrapiErrors } from "@/components/custom/strapi-errors";
 
 interface ProfileFormProps {
   id: string;
@@ -15,6 +17,12 @@ interface ProfileFormProps {
   bio: string;
   credits: number;
 }
+
+const INITIAL_STATE = {
+  data: null,
+  strapiErrors: null,
+  message: null,
+};
 
 function CountBox({ text }: { readonly text: number }) {
   const style = "font-bold text-md mx-1";
@@ -33,8 +41,15 @@ export function ProfileForm({
   readonly data: ProfileFormProps;
   readonly className?: string;
 }) {
+  const updateProfileWithId = updateProfileAction.bind(null, data.id);
+
+  const [formState, formAction] = useActionState(
+    updateProfileWithId,
+    INITIAL_STATE
+  );
+
   return (
-    <form className={cn("space-y-4", className)}>
+    <form className={cn("space-y-4", className)} action={formAction}>
       <div className="space-y-4 grid ">
         <div className="grid grid-cols-3 gap-4">
           <Input
@@ -80,6 +95,7 @@ export function ProfileForm({
       <div className="flex justify-end">
         <SubmitButton text="Update Profile" loadingText="Saving Profile" />
       </div>
+      <StrapiErrors error={formState?.strapiErrors} />
     </form>
   );
 }

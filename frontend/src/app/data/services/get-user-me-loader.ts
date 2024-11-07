@@ -1,10 +1,11 @@
+import qs from "qs";
 import { getAuthToken } from "./get-token";
 import { getStrapiURL } from "@/lib/utils";
 
 export async function getUserMeLoader() {
   const baseUrl = getStrapiURL();
 
-  const url = new URL("/api/users/me", baseUrl);
+  const url = new URL("/api/users/me?populate=image", baseUrl);
 
   const authToken = await getAuthToken();
   if (!authToken) return { ok: false, data: null, error: null };
@@ -19,7 +20,6 @@ export async function getUserMeLoader() {
       cache: "no-cache",
     });
     const data = await response.json();
-    console.log("data: ", data)
     
     if (data.error) return { ok: false, data: null, error: data.error };
     return { ok: true, data: data, error: null };
