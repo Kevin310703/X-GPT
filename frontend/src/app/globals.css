@@ -98,3 +98,8 @@ body {
 .h-520px {
   max-height: 520px;
 }
+
+/* Hiển thị dropdown khi checkbox được chọn */
+#toggle-dropdown:checked ~ .dropdown-menu {
+  display: block;
+}

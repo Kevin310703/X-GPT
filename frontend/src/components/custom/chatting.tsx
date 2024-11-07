@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, ChangeEvent, useEffect, useRef } from "react";
-import { ChatMessage } from "../components/types"; // Adjust the path as necessary
+import { ChatMessage } from "../types"; // Adjust the path as necessary
 
 interface ChattingProps {
     data: ChatMessage[];
@@ -199,39 +199,44 @@ export function Chatting({ data, selectedModel, isLoggedIn }: ChattingProps) {
                 ref={chatContainerRef}
                 className="flex-grow overflow-y-auto space-y-4 w-full max-w-2xl"
             >
-                {chatHistory.map((block: ChatMessage, index: number) => (
-                    <div key={index} className="animate-fade-in">
-                        <div className="flex justify-end mb-2">
-                            <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
-                                <h2 className="text-md font-semibold">{block.question}</h2>
-                            </div>
-                            <img
-                                src="/default-male.jpg"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full ml-2 mr-5"
-                            />
-                        </div>
-
-                        {block.answer && (
-                            <div className="flex justify-start mb-2">
-                                <img
-                                    src="/avt-chatbot.svg"
-                                    alt="AI Avatar"
-                                    className="w-10 h-10 rounded-full mr-2"
-                                />
-                                <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
-                                    {typeof block.answer === "string" ? (
-                                        <p>{block.answer}</p>
-                                    ) : (
-                                        block.answer
-                                    )}
+                {/* Hiển thị phần chat của người dùng nếu có */}
+                {chatHistory.length === 0 ? (
+                    <p className="text-gray-500 text-center">No previous chats available. Ask a question!</p>
+                ) : (
+                    chatHistory.map((block: ChatMessage, index: number) => (
+                        <div key={index} className="animate-fade-in">
+                            <div className="flex justify-end mb-2">
+                                <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
+                                    <h2 className="text-md font-semibold">{block.question}</h2>
                                 </div>
+                                <img
+                                    src="/default-male.jpg"
+                                    alt="User Avatar"
+                                    className="w-10 h-10 rounded-full ml-2 mr-5"
+                                />
                             </div>
-                        )}
-                    </div>
-                ))}
+
+                            {block.answer && (
+                                <div className="flex justify-start mb-2">
+                                    <img
+                                        src="/avt-chatbot.svg"
+                                        alt="AI Avatar"
+                                        className="w-10 h-10 rounded-full mr-2"
+                                    />
+                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                        {typeof block.answer === "string" ? (
+                                            <p>{block.answer}</p>
+                                        ) : (
+                                            block.answer
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
-    
+
             <div className="mt-4 flex flex-col space-y-4 w-full max-w-2xl">
                 <div className="flex items-center space-x-4">
                     <input
@@ -350,20 +355,7 @@ export function Chatting({ data, selectedModel, isLoggedIn }: ChattingProps) {
 
     return (
         <div>
-            {isLoggedIn ? renderChatView() : renderGuestView()}
-            {/* {chatHistory.length > 0 && (
-                <div className="mt-4">
-                    <h3 className="text-lg font-semibold">Chat History:</h3>
-                    <ul>
-                        {chatHistory.map((block, index) => (
-                            <li key={index} className="mt-2">
-                                <strong>Q:</strong> {block.question}<br />
-                                <strong>A:</strong> {block.answer ? (typeof block.answer === "string" ? block.answer : <div>{block.answer}</div>) : "No response yet."}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )} */}
+            {isLoggedIn && chatHistory.length > 0 ? renderChatView() : renderGuestView()}
         </div>
     );
 }

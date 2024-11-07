@@ -3,10 +3,12 @@ import type { Schema, Struct } from '@strapi/strapi';
 export interface ComponentsLink extends Struct.ComponentSchema {
   collectionName: 'components_components_links';
   info: {
+    description: '';
     displayName: 'Link';
   };
   attributes: {
     isExternal: Schema.Attribute.Boolean;
+    text: Schema.Attribute.String;
     url: Schema.Attribute.String;
   };
 }
