@@ -4,7 +4,8 @@
   "info": {
     "singularName": "chat-message",
     "pluralName": "chat-messages",
-    "displayName": "ChatMessage"
+    "displayName": "ChatMessage",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -18,18 +19,18 @@
         "image"
       ]
     },
-    "user_question": {
-      "type": "text",
-      "maxLength": 700
-    },
-    "chatbot_response": {
-      "type": "text"
-    },
     "chat_session": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::chat-session.chat-session",
       "inversedBy": "chat_messages"
+    },
+    "user_question": {
+      "type": "richtext",
+      "maxLength": 700
+    },
+    "chatbot_response": {
+      "type": "richtext"
     }
   }
 }

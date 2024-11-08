@@ -77,7 +77,7 @@ export function SignupForm() {
             <img
                 src="/star.png" // Replace with your image path
                 alt="Circular Image"
-                className="absolute top-[20px] left-1/2 transform -translate-x-1/2 w-10 h-10"
+                className="absolute top-[80px] left-1/2 transform -translate-x-1/2 w-10 h-10"
             />
 
             <form action={formAction}>

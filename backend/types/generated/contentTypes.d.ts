@@ -372,6 +372,7 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
 export interface ApiChatMessageChatMessage extends Struct.CollectionTypeSchema {
   collectionName: 'chat_messages';
   info: {
+    description: '';
     displayName: 'ChatMessage';
     pluralName: 'chat-messages';
     singularName: 'chat-message';
@@ -384,7 +385,7 @@ export interface ApiChatMessageChatMessage extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::chat-session.chat-session'
     >;
-    chatbot_response: Schema.Attribute.Text;
+    chatbot_response: Schema.Attribute.RichText;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -399,7 +400,7 @@ export interface ApiChatMessageChatMessage extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    user_question: Schema.Attribute.Text &
+    user_question: Schema.Attribute.RichText &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 700;
       }>;
@@ -502,6 +503,31 @@ export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     title: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiModelModel extends Struct.CollectionTypeSchema {
+  collectionName: 'models';
+  info: {
+    displayName: 'Model';
+    pluralName: 'models';
+    singularName: 'model';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::model.model'> &
+      Schema.Attribute.Private;
+    Name: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1025,6 +1051,7 @@ declare module '@strapi/strapi' {
       'api::chat-session.chat-session': ApiChatSessionChatSession;
       'api::global.global': ApiGlobalGlobal;
       'api::home-page.home-page': ApiHomePageHomePage;
+      'api::model.model': ApiModelModel;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

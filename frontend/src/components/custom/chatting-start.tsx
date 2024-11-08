@@ -1,17 +1,16 @@
-// components/chatting.tsx
+// components/chatting-start.tsx
 
 "use client";
 
 import { useState, ChangeEvent, useEffect, useRef } from "react";
 import { ChatMessage } from "../types";
-import { useModel } from "../provider/model-provider";
 
-interface ChattingProps {
+interface ChattingStartProps {
     data: ChatMessage[];
+    selectedModel: string;
 }
 
-export function Chatting({ data }: ChattingProps) {
-    const { selectedModel } = useModel();
+export function ChattingStart({ data, selectedModel }: ChattingStartProps) {
     const [inputValue, setInputValue] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>(data || []);
     const [isLoading, setIsLoading] = useState(false);
@@ -192,63 +191,58 @@ export function Chatting({ data }: ChattingProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-100 shadow rounded-lg p-6">
+        <div className="flex flex-col h-full p-6 items-center justify-center max-h-max">
+            <h1 className="text-3xl font-bold text-gray-800 mb-4">How can I assist you today?</h1>
             <div
                 ref={chatContainerRef}
-                className="flex-grow overflow-y-auto space-y-4"
-                style={{ maxHeight: "calc(100vh - 250px)", /* adjust according to your layout */ }}
+                className="flex-grow overflow-y-auto space-y-4 w-full max-w-2xl"
             >
-                {chatHistory.map((block: ChatMessage, index: number) => (
-                    <div key={index} className="animate-fade-in">
-                        <div className="flex justify-end mb-2">
-                            <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
-                                <h2 className="text-md font-semibold">{block.question}</h2>
-                            </div>
-                            <img
-                                src="/default-male.jpg"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full ml-2 mr-5"
-                            />
-                        </div>
-                        {block.answer && (
-                            <div className="flex justify-start mb-2">
-                                <img
-                                    src="/avt-chatbot.svg"
-                                    alt="AI Avatar"
-                                    className="w-10 h-10 rounded-full mr-2"
-                                />
-                                <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
-                                    {typeof block.answer === "string" ? (
-                                        <p>{block.answer}</p>
-                                    ) : (
-                                        block.answer
-                                    )}
+                {/* Hiển thị phần chat của người dùng nếu có */}
+                {chatHistory.length === 0 ? (
+                    <p className="text-gray-500 text-center">No previous chats available. Ask a question!</p>
+                ) : (
+                    chatHistory.map((block: ChatMessage, index: number) => (
+                        <div key={index} className="animate-fade-in">
+                            <div className="flex justify-end mb-2">
+                                <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
+                                    <h2 className="text-md font-semibold">{block.question}</h2>
                                 </div>
+                                <img
+                                    src="/default-male.jpg"
+                                    alt="User Avatar"
+                                    className="w-10 h-10 rounded-full ml-2 mr-5"
+                                />
                             </div>
-                        )}
-                    </div>
-                ))}
+
+                            {block.answer && (
+                                <div className="flex justify-start mb-2">
+                                    <img
+                                        src="/avt-chatbot.svg"
+                                        alt="AI Avatar"
+                                        className="w-10 h-10 rounded-full mr-2"
+                                    />
+                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                        {typeof block.answer === "string" ? (
+                                            <p>{block.answer}</p>
+                                        ) : (
+                                            block.answer
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
 
-            <div className="mt-4 flex flex-col space-y-4">
-                <div className="flex justify-between">
-                    <button
-                        onClick={handleRegenerate}
-                        className="flex items-center gap-2 bg-gray-100 py-2 px-4 rounded-full shadow-md hover:bg-gray-200"
-                        disabled={isLoading}
-                    >
-                        <span className="text-gray-600">↻</span>
-                        <span className="text-gray-600">Regenerate response</span>
-                    </button>
-                </div>
-
+            <div className="mt-4 flex flex-col space-y-4 w-full max-w-2xl">
                 <div className="flex items-center space-x-4">
                     <input
                         type="text"
                         value={inputValue}
                         onChange={handleInputChange}
                         placeholder={`Message for ${selectedModel}`}
-                        className="flex-grow px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:border-indigo-500"
+                        className="flex-grow w-full max-w-2xl px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:border-indigo-500"
                         disabled={isLoading}
                         onKeyPress={(e) => {
                             if (e.key === "Enter") {
@@ -265,7 +259,6 @@ export function Chatting({ data }: ChattingProps) {
                         {isLoading ? "Processing..." : "Submit"}
                     </button>
                 </div>
-
                 <p className="text-xs text-gray-500 text-center mt-4">
                     {selectedModel} may produce inaccurate information about people,
                     places, or facts.

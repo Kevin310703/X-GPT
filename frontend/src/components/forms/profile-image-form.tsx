@@ -43,6 +43,10 @@ export function ProfileImageForm({
 
   return (
     <form className={cn("space-y-4", className)} action={formAction}>
+      <p className="text-xl font-semibold text-[#1B2559] mb-4 border-b pb-2">
+        Avatar
+      </p>
+
       <div className="">
         <ImagePicker
           id="image"
@@ -54,7 +58,7 @@ export function ProfileImageForm({
         <StrapiErrors error={formState.strapiErrors} />
       </div>
       <div className="flex justify-end">
-        <SubmitButton text="Update Image" loadingText="Saving Image" />
+        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF]" text="Update Image" loadingText="Saving Image" />
       </div>
     </form>
   );

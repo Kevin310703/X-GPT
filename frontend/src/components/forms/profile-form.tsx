@@ -50,8 +50,12 @@ export function ProfileForm({
 
   return (
     <form className={cn("space-y-4", className)} action={formAction}>
+      <p className="text-xl font-semibold text-[#1B2559] mb-4 border-b pb-2">
+        Your Information
+      </p>
+
       <div className="space-y-4 grid ">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Input
             id="username"
             name="username"
@@ -66,7 +70,7 @@ export function ProfileForm({
             defaultValue={data.email || ""}
             disabled
           />
-          <CountBox text={data.credits} />
+          {/* <CountBox text={data.credits} /> */}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -93,7 +97,7 @@ export function ProfileForm({
         />
       </div>
       <div className="flex justify-end">
-        <SubmitButton text="Update Profile" loadingText="Saving Profile" />
+        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF]" text="Update Profile" loadingText="Saving Profile" />
       </div>
       <StrapiErrors error={formState?.strapiErrors} />
     </form>
