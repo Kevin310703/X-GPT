@@ -12,6 +12,11 @@ interface LoginUserProps {
   password: string;
 }
 
+interface ResetPasswordProps {
+  password: string;
+  passwordConfirmation: string;
+}
+
 interface ChangePasswordProps {
   currentPassword: string;
   password: string;
@@ -60,8 +65,12 @@ export async function loginUserService(userData: LoginUserProps) {
 }
 
 export async function forgotPasswordService(email: string) {
+  const url = new URL("/api/auth/forgot-password", baseUrl);
+
+  console.log(email)
+
   try {
-    const response = await fetch("/api/auth/forgot-password", {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,12 +81,43 @@ export async function forgotPasswordService(email: string) {
     const data = await response.json();
 
     if (!response.ok) {
+      // In ra thông báo lỗi chi tiết từ backend để debug
+      console.error("Error response data:", data);
       throw new Error(data.message || "Failed to send reset email");
     }
 
     return data;
   } catch (error) {
+    // Log lỗi chi tiết để dễ dàng xử lý
     console.error("Error in forgotPasswordService:", error);
+    throw error;
+  }
+}
+
+export async function resetPasswordService(passwordData: ResetPasswordProps, code: string) {
+  const url = new URL("/api/auth/reset-password", baseUrl);
+
+  try {
+    const authToken = await getAuthToken();
+    if (!authToken) return { ok: false, data: null, error: null };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        password: passwordData.password,
+        passwordConfirmation: passwordData.passwordConfirmation,
+        code: code,
+      }),      
+      cache: "no-cache",
+    });
+
+    return response.json();
+  } catch (error) {
+    console.error("Reset Password Service Error:", error);
     throw error;
   }
 }
@@ -93,7 +133,7 @@ export async function changePasswordService(passwordData: ChangePasswordProps) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${authToken}`, // Thêm token ở đây
+        "Authorization": `Bearer ${authToken}`,
       },
       body: JSON.stringify(passwordData),
       cache: "no-cache",

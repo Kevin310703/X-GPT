@@ -4,7 +4,7 @@ import { z } from "zod";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { registerUserService, loginUserService, forgotPasswordService, changePasswordService } from "@/app/data/services/auth-service";
+import { registerUserService, loginUserService, forgotPasswordService, changePasswordService, resetPasswordService } from "@/app/data/services/auth-service";
 
 const config = {
   maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -191,6 +191,79 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
     message: "Password reset email sent successfully.",
     strapiErrors: null,
     zodErrors: null,
+  };
+}
+
+// Reset password
+const schemaResetPassword = z.object({
+  password: z
+    .string()
+    .min(1, { message: "New password is required" })
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+
+  passwordConfirmation: z
+    .string()
+    .min(1, { message: "Confirm password is required" })
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+})
+  .refine(data => data.passwordConfirmation === data.password, {
+    message: "Confirm password must match the new password",
+    path: ["confirm_password"],
+  });
+
+export async function resetPasswordAction(prevState: any, formData: FormData) {
+  if (!(formData instanceof FormData)) {
+    console.error("Expected formData to be a FormData instance, received:", formData);
+    return;
+  }
+
+  const validatedFields = schemaResetPassword.safeParse({
+    password: formData.get("password"),
+    passwordConfirmation: formData.get("passwordConfirmation"),
+  });
+
+  console.log(validatedFields);
+
+  if (!validatedFields.success) {
+    return {
+      ...prevState,
+      zodErrors: validatedFields.error.flatten().fieldErrors,
+      message: "Validation failed. Please check the form fields.",
+    };
+  }
+
+  const responseData = await resetPasswordService(validatedFields.data, prevState.code);
+  console.log(responseData);
+  if (!responseData) {
+    return {
+      ...prevState,
+      strapiErrors: null,
+      zodErrors: null,
+      message: "Something went wrong. Please try again.",
+      code: prevState.code,
+    };
+  }
+
+  if (responseData.error) {
+    return {
+      ...prevState,
+      strapiErrors: responseData.error,
+      zodErrors: null,
+      message: "Failed to reset password.",
+      code: prevState.code,
+    };
+  }
+
+  return {
+    ...prevState,
+    message: "Password reseted successfully.",
+    strapiErrors: null,
+    zodErrors: null,
+    code: prevState.code,
   };
 }
 
