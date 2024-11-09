@@ -144,25 +144,41 @@ export default async function RootLayout({
 
                       {/* Ảnh đại diện với chức năng dropdown */}
                       <div className="relative inline-block">
-                        <input type="checkbox" id="toggle-dropdown" className="hidden" />
-                        <label htmlFor="toggle-dropdown">
+                        <input type="checkbox" id="toggle-dropdown" className="hidden peer" />
+                        <label htmlFor="toggle-dropdown" className="cursor-pointer">
                           <img
                             src={`http://localhost:1337${user.data?.image?.url}`}
                             alt="Profile"
-                            className="w-8 h-8 rounded-full cursor-pointer" />
+                            className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-md hover:border-blue-500 transition-all duration-300"
+                          />
                         </label>
 
                         {/* Dropdown menu */}
-                        <div className="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 hidden">
-                          <ul className="py-1 text-gray-700">
-                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                              <a href="/dashboard/account">Profile</a>
+                        <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl ring-1 ring-gray-200 z-50 opacity-0 scale-95 transition-all duration-300 ease-out peer-checked:opacity-100 peer-checked:scale-100 peer-checked:translate-y-0">
+                          <ul className="py-2 text-sm text-gray-700">
+                            <li>
+                              <a
+                                href="/dashboard/account"
+                                className="block px-4 py-2 hover:bg-blue-100 hover:text-blue-700 transition-all rounded-lg"
+                              >
+                                Profile
+                              </a>
                             </li>
-                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                              <a href="/settings">Settings</a>
+                            <li>
+                              <a
+                                href="/auth/changepassword"
+                                className="block px-4 py-2 hover:bg-blue-100 hover:text-blue-700 transition-all rounded-lg"
+                              >
+                                Change password
+                              </a>
                             </li>
-                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                              <a href="/logout">Logout</a>
+                            <li>
+                              <a
+                                href="/logout"
+                                className="block px-4 py-2 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all rounded-lg"
+                              >
+                                Logout
+                              </a>
                             </li>
                           </ul>
                         </div>

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { registerUserService, loginUserService, forgotPasswordService } from "@/app/data/services/auth-service";
+import { registerUserService, loginUserService, forgotPasswordService, changePasswordService } from "@/app/data/services/auth-service";
 
 const config = {
   maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -14,6 +14,7 @@ const config = {
   secure: process.env.NODE_ENV === "production",
 };
 
+// Register
 const schemaRegister = z.object({
   username: z
     .string()
@@ -86,11 +87,10 @@ export async function registerUserAction(prevState: any, formData: FormData) {
     };
   }
 
-  // const requestCookies = await cookies();
-  // requestCookies.set("jwt", responseData.jwt, config);
   redirect("/auth/signin");
 }
 
+// Login
 const schemaLogin = z.object({
   identifier: z
     .string()
@@ -126,7 +126,7 @@ export async function loginUserAction(prevState: any, formData: FormData) {
   }
 
   const responseData = await loginUserService(validatedFields.data);
-  
+
   if (!responseData) {
     return {
       ...prevState,
@@ -157,38 +157,117 @@ export async function logoutAction() {
   redirect("/");
 }
 
+// Forgot Password
 const schemaForgotPassword = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
 });
 
 export async function forgotPasswordAction(prevState: any, formData: FormData) {
   const validatedFields = schemaForgotPassword.safeParse({
-      email: formData.get("email"),
+    email: formData.get("email"),
   });
 
   if (!validatedFields.success) {
-      return {
-          ...prevState,
-          zodErrors: validatedFields.error.flatten().fieldErrors,
-          message: "Invalid email address.",
-      };
+    return {
+      ...prevState,
+      zodErrors: validatedFields.error.flatten().fieldErrors,
+      message: "Invalid email address.",
+    };
   }
 
   const responseData = await forgotPasswordService(validatedFields.data.email);
 
   if (responseData?.error) {
-      return {
-          ...prevState,
-          strapiErrors: responseData.error,
-          zodErrors: null,
-          message: "Failed to send reset email.",
-      };
+    return {
+      ...prevState,
+      strapiErrors: responseData.error,
+      zodErrors: null,
+      message: "Failed to send reset email.",
+    };
   }
 
   return {
+    ...prevState,
+    message: "Password reset email sent successfully.",
+    strapiErrors: null,
+    zodErrors: null,
+  };
+}
+
+// Change Password
+const schemaChangePassword = z.object({
+  currentPassword: z
+    .string()
+    .min(1, { message: "Old password is required" })
+    .min(8, { message: "Old password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+
+    password: z
+    .string()
+    .min(1, { message: "New password is required" })
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+
+    passwordConfirmation: z
+    .string()
+    .min(1, { message: "Confirm password is required" })
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+})
+  .refine(data => data.passwordConfirmation === data.password, {
+    message: "Confirm password must match the new password",
+    path: ["confirm_password"],
+  });
+
+export async function changePasswordAction(prevState: any, formData: FormData) {
+  if (!(formData instanceof FormData)) {
+    console.error("Expected formData to be a FormData instance, received:", formData);
+    return;
+  }
+
+  const validatedFields = schemaChangePassword.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    password: formData.get("password"),
+    passwordConfirmation: formData.get("passwordConfirmation"),
+  });
+
+  console.log(validatedFields);
+
+  if (!validatedFields.success) {
+    return {
       ...prevState,
-      message: "Password reset email sent successfully.",
+      zodErrors: validatedFields.error.flatten().fieldErrors,
+      message: "Validation failed. Please check the form fields.",
+    };
+  }
+
+  const responseData = await changePasswordService(validatedFields.data);
+  console.log(responseData);
+  if (!responseData) {
+    return {
+      ...prevState,
       strapiErrors: null,
       zodErrors: null,
+      message: "Something went wrong. Please try again.",
+    };
+  }
+
+  if (responseData.error) {
+    return {
+      ...prevState,
+      strapiErrors: responseData.error,
+      zodErrors: null,
+      message: "Failed to change password.",
+    };
+  }
+
+  return {
+    ...prevState,
+    message: "Password changed successfully.",
+    strapiErrors: null,
+    zodErrors: null,
   };
 }
