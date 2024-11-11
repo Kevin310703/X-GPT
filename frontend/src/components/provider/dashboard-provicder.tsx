@@ -8,7 +8,7 @@ interface DashboardContextType {
     selectedModel: string;
 }
 
-const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+export const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
     const { selectedModel } = useModel();
@@ -18,4 +18,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
             {children}
         </DashboardContext.Provider>
     );
+}
+
+export function useDashboardContext(): DashboardContextType {
+    const context = useContext(DashboardContext);
+    if (!context) {
+        throw new Error("useDashboardContext must be used within a DashboardProvider");
+    }
+    return context;
 }

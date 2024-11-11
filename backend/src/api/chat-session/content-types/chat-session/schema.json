@@ -13,7 +13,8 @@
   "pluginOptions": {},
   "attributes": {
     "title": {
-      "type": "text"
+      "type": "text",
+      "unique": true
     },
     "chat_messages": {
       "type": "relation",

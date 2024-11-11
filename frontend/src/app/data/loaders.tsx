@@ -24,11 +24,27 @@ async function fetchData(url: string) {
 }
 
 export async function getGlobalPageMetadata() {
-    const url = new URL("/api/global", baseUrl);
-  
-    url.search = qs.stringify({
-      fields: ["title", "description"],
-    });
-  
-    return await fetchData(url.href);
+  const url = new URL("/api/global", baseUrl);
+
+  url.search = qs.stringify({
+    fields: ["title", "description"],
+  });
+
+  return await fetchData(url.href);
+}
+
+export async function fetchChatSessions(authToken: string) {
+  const response = await fetch("http://localhost:1337/api/chat-sessions", {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch chat sessions");
   }
+
+  const data = await response.json();
+  return data?.data ?? [];
+}

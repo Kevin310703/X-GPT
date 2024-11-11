@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ChatMessage } from "../components/types";
 import { ChattingStart } from "@/components/custom/chatting-start";
 import { useModel } from "@/components/provider/model-provider";
+import { ClientWrapper } from "@/components/custom/client-wrapper";
 
 interface Model {
   id: number;
@@ -57,7 +58,11 @@ export default function Home() {
       <main className="flex-1 container mx-auto p-2">
         <div className="flex flex-col h-full">
           <div className="flex-grow">
-            <ChattingStart data={chatData} selectedModel={selectedModel} />
+            <ClientWrapper>
+              {({ selectedModel }) => (
+                <ChattingStart data={chatData} selectedModel={selectedModel} />
+              )}
+            </ClientWrapper>
           </div>
         </div>
       </main>

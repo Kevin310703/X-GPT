@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Chatting } from "../../components/custom/chatting";
+import { ChattingStartRoute } from "./chat/page";
 import { ChatMessage } from "../../components/types";
 import { getUserMeLoader } from "@/app/data/services/get-user-me-loader";
 
@@ -41,7 +41,7 @@ export default async function DashboardRoute() {
         <main className="flex-1 container mx-auto p-2">
           <div className="flex flex-col h-full">
             <div className="flex-grow">
-              <Chatting data={chatData} />
+              <ChattingStartRoute />
             </div>
           </div>
         </main>
