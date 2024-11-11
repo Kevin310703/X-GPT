@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import React from 'react';
 import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/custom/header";
@@ -12,6 +13,66 @@ import { ModelForm } from "@/components/forms/model-form";
 import NewChatButton from "@/components/custom/create-new-chat-button";
 import { getAuthToken } from "./data/services/get-token";
 import { ChatProvider } from "@/components/provider/chat-provider";
+import {
+  isToday,
+  isYesterday,
+  isThisWeek,
+  isThisMonth,
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  subWeeks,
+  startOfMonth,
+  endOfMonth,
+  subMonths
+} from 'date-fns';
+import ChatList from "@/components/custom/chat-list";
+
+const classifyChatsByDate = (chatSessions: any[]) => {
+  const today: any[] = [];
+  const yesterday: any[] = [];
+  const thisWeek: any[] = [];
+  const lastWeek: any[] = [];
+  const thisMonth: any[] = [];
+  const lastMonth: any[] = [];
+  const earlier: any[] = [];
+
+  const now = new Date();
+
+  // Tuần này và tuần trước
+  const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Tuần bắt đầu vào thứ Hai
+  const endOfThisWeek = endOfWeek(now, { weekStartsOn: 1 }); // Tuần kết thúc vào Chủ nhật
+  const startOfLastWeek = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+  const endOfLastWeek = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+
+  // Tháng này và tháng trước
+  const startOfThisMonth = startOfMonth(now);
+  const endOfThisMonth = endOfMonth(now);
+  const startOfLastMonth = startOfMonth(subMonths(now, 1));
+  const endOfLastMonth = endOfMonth(subMonths(now, 1));
+
+  chatSessions.forEach((session: { createdAt: string | number | Date; }) => {
+    const createdAt = new Date(session.createdAt);
+
+    if (isToday(createdAt)) {
+      today.push(session);
+    } else if (isYesterday(createdAt)) {
+      yesterday.push(session);
+    } else if (isWithinInterval(createdAt, { start: startOfThisWeek, end: endOfThisWeek })) {
+      thisWeek.push(session);
+    } else if (isWithinInterval(createdAt, { start: startOfLastWeek, end: endOfLastWeek })) {
+      lastWeek.push(session);
+    } else if (isWithinInterval(createdAt, { start: startOfThisMonth, end: endOfThisMonth })) {
+      thisMonth.push(session);
+    } else if (isWithinInterval(createdAt, { start: startOfLastMonth, end: endOfLastMonth })) {
+      lastMonth.push(session);
+    } else {
+      earlier.push(session);
+    }
+  });
+
+  return { today, yesterday, thisWeek, lastWeek, thisMonth, lastMonth, earlier };
+};
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -46,6 +107,7 @@ export default async function RootLayout({
     throw new Error("Authentication token is missing");
   }
   const chatSessions = await fetchChatSessions(authToken);
+  const sortedChats = classifyChatsByDate(chatSessions);
 
   return (
     <html lang="en">
@@ -66,74 +128,38 @@ export default async function RootLayout({
 
                   <NewChatButton authToken={authToken ?? ""} />
 
-                  <div className="flex-1 overflow-y-auto">
-                    <div>
-                      {/* Hiển thị danh sách chat sessions */}
-                      <ul>
-                        {chatSessions.map((session: any) => (
-                          <li key={session.id} className="cursor-pointer hover:text-indigo-500">
-                            <Link href={`/dashboard/chat/${session.id}`}>
-                              {session.title || "Untitled Chat"}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="flex-1 overflow-y-auto mt-4">
+                    {/* Hiển thị lịch sử chat khi có dữ liệu */}
+                    <ChatList sortedChats={sortedChats} />
+                  </div>
 
-                      {/* Hiển thị lịch sử chat khi có dữ liệu */}
-                      <div className="mb-4">
-                        <h3 className="text-sm font-bold text-gray-700">Today</h3>
-                        <ul className="mt-2 space-y-1 text-gray-600">
-                          <li>The advantages of Artificial Intelligence</li>
-                        </ul>
+                  <div className="border-t border-gray-200 pt-4 mt-4 text-sm text-gray-600">
+                    <button className="flex items-center gap-2 hover:text-gray-800 mb-3">
+                      <img
+                        src="/trash.svg"
+                        alt="Clear"
+                        className="w-5 h-5 transform transition-transform duration-200 hover:scale-125" />
+                      Clear conversations
+                    </button>
+                    <button className="flex items-center gap-2 hover:text-gray-800 mb-3">
+                      <img
+                        src="/external-link.svg"
+                        alt="Updates"
+                        className="w-5 h-5 transform transition-transform duration-200 hover:scale-125" />
+                      Updates & FAQ
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-6">
+                    <Link href="/dashboard/account" passHref>
+                      <div className="flex items-center mr-28 gap-2">
+                        <img src={`http://localhost:1337${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full" />
+                        <div className="flex-1">
+                          <p className="font-semibold">{user.data.username}</p>
+                        </div>
                       </div>
-
-                      <div className="mb-4">
-                        <h3 className="text-sm font-bold text-gray-700">Yesterday</h3>
-                        <ul className="mt-2 space-y-1 text-gray-600">
-                          <li>HTML basic</li>
-                          <li>What is AI</li>
-                          <li>T5 model</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-700">Last week</h3>
-                        <ul className="mt-2 space-y-1 text-gray-600">
-                          <li>Balanced Focal Loss Overview</li>
-                          <li>Competition vs Cooperation Strategies</li>
-                          <li>Translation Error Assistance</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 pt-4 mt-4 text-sm text-gray-600">
-                      <button className="flex items-center gap-2 hover:text-gray-800 mb-3">
-                        <img
-                          src="/trash.svg"
-                          alt="Clear"
-                          className="w-5 h-5 transform transition-transform duration-200 hover:scale-125" />
-                        Clear conversations
-                      </button>
-                      <button className="flex items-center gap-2 hover:text-gray-800 mb-3">
-                        <img
-                          src="/external-link.svg"
-                          alt="Updates"
-                          className="w-5 h-5 transform transition-transform duration-200 hover:scale-125" />
-                        Updates & FAQ
-                      </button>
-
-                      <div className="flex items-center gap-3 mt-6">
-                        <Link href="/dashboard/account" passHref>
-                          <div className="flex items-center mr-28 gap-2">
-                            <img src={`http://localhost:1337${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full" />
-                            <div className="flex-1">
-                              <p className="font-semibold">{user.data.username}</p>
-                            </div>
-                          </div>
-                        </Link>
-                        <LogoutButton />
-                      </div>
-                    </div>
+                    </Link>
+                    <LogoutButton />
                   </div>
                 </aside>
 

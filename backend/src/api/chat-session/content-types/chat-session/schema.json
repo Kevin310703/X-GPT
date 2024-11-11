@@ -8,13 +8,13 @@
     "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "title": {
       "type": "text",
-      "unique": true
+      "unique": false
     },
     "chat_messages": {
       "type": "relation",

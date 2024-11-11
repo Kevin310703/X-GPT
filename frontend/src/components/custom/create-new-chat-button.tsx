@@ -4,6 +4,8 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 // import { useRouter } from "next/router";
 import { useChat } from "@/components/provider/chat-provider";
+import { createChatSessionService } from "@/app/data/services/chat-service";
+import { fetchChatSessions } from "@/app/data/loaders";
 
 interface ChatSession {
     id: number;
@@ -14,25 +16,6 @@ interface ChatSession {
     publishedAt: string;
 }
 
-export async function createChatSession(title: string, authToken: string) {
-    const url = "http://localhost:1337/api/chat-sessions";
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ title }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to create chat session: ${response.statusText}`);
-    }
-
-    return await response.json();
-}
-
 const NewChatButton = ({ authToken }: { authToken: string }) => {
     // const router = useRouter();
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -40,43 +23,28 @@ const NewChatButton = ({ authToken }: { authToken: string }) => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const fetchChatSessions = async () => {
-        try {
-            const response = await axios.get("http://localhost:1337/api/chat-sessions", {
-                headers: { Authorization: `Bearer ${authToken}` },
-            });
+    // const fetchChatSessions = async () => {
+    //     try {
+    //         const response = await axios.get("http://localhost:1337/api/chat-sessions", {
+    //             headers: { Authorization: `Bearer ${authToken}` },
+    //         });
 
-            setChatSessions(response.data.data || []);
-            setError(null); // Xóa lỗi nếu có
-        } catch (err) {
-            setError("Failed to fetch chat sessions. Please try again later.");
-            console.error("Error fetching chat sessions:", err);
-        }
-    };
+    //         setChatSessions(response.data.data || []);
+    //         setError(null); // Xóa lỗi nếu có
+    //     } catch (err) {
+    //         setError("Failed to fetch chat sessions. Please try again later.");
+    //         console.error("Error fetching chat sessions:", err);
+    //     }
+    // };
 
     const createNewChat = async () => {
         if (isLoading) return; // Ngăn chặn nếu đang xử lý yêu cầu
         setIsLoading(true); // Bắt đầu tải
 
         try {
-            const newChat = await createChatSession("New Chat", authToken);
+            const newChat = await createChatSessionService("New Chat", authToken);
             console.log("New Chat Session Created:", newChat);
-            await fetchChatSessions(); // Cập nhật danh sách Chat Sessions
-
-            // if (response.data && response.data.data) {
-            //     const newChat = response.data.data;
-            //     await fetchChatSessions(); // Đồng bộ danh sách
-            //     setSelectedChatId(newChat.id);
-            // } else {
-            //     console.error("Unexpected response format:", response.data);
-            // }
-
-            // if (!response.ok) {
-            //     console.error("Failed to create new chat:", response.statusText);
-            //     throw new Error(`Error: ${response.status}`);
-            // }
-
-            // return response.json();
+            fetchChatSessions(authToken); // Cập nhật danh sách Chat Sessions
         } catch (err) {
             console.error("Error creating a new chat:", err);
         } finally {
@@ -84,15 +52,9 @@ const NewChatButton = ({ authToken }: { authToken: string }) => {
         }
     };
 
-    const handleChatSelection = (chatId: number) => {
-        setSelectedChatId(chatId); // Cập nhật chat session ID
-        // router.push(`/dashboard/chat/${chatId}`);
-        // console.log("ok");
-    };
-
     useEffect(() => {
         if (authToken) {
-            fetchChatSessions();
+            fetchChatSessions(authToken);
         }
     }, [authToken]);
 
@@ -117,17 +79,6 @@ const NewChatButton = ({ authToken }: { authToken: string }) => {
                 />
                 {isLoading ? "Creating..." : "Create new chat"}
             </button>
-            {/* <ul>
-                {chatSessions.map((session) => (
-                    <li
-                        key={session.id}
-                        className="cursor-pointer hover:text-indigo-500"
-                        onClick={() => handleChatSelection(session.id)}
-                    >
-                        {session.title || "Untitled Chat"}
-                    </li>
-                ))}
-            </ul> */}
         </aside>
 
     );

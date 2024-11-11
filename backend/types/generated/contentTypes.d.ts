@@ -416,7 +416,7 @@ export interface ApiChatSessionChatSession extends Struct.CollectionTypeSchema {
     singularName: 'chat-session';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     chat_messages: Schema.Attribute.Relation<
@@ -433,7 +433,7 @@ export interface ApiChatSessionChatSession extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    title: Schema.Attribute.Text & Schema.Attribute.Unique;
+    title: Schema.Attribute.Text;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
