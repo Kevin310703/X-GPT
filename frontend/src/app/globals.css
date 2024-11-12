@@ -103,3 +103,53 @@ body {
 #toggle-dropdown:checked ~ .dropdown-menu {
   display: block;
 }
+
+/* Loading processing chat respone */
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4A25E1;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes typing {
+  from {
+      width: 0;
+  }
+  to {
+      width: 25ch; /* Điều chỉnh theo độ dài của câu hỏi */
+  }
+}
+
+@keyframes blink {
+  0% {
+      border-color: transparent;
+  }
+  50% {
+      border-color: #2d3748;
+  }
+  100% {
+      border-color: transparent;
+  }
+}
+
+.animate-typing {
+  animation: typing 2s steps(40, end) forwards, blink 0.7s step-end infinite;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 25ch; /* Đặt chiều rộng tối đa khớp với độ dài câu hỏi */
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: #f3f4f6;
+}
+
+.hover\:bg-red-100:hover {
+  background-color: #fee2e2;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}

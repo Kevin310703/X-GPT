@@ -378,7 +378,7 @@ export interface ApiChatMessageChatMessage extends Struct.CollectionTypeSchema {
     singularName: 'chat-message';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     chat_session: Schema.Attribute.Relation<

@@ -2,11 +2,90 @@
 
 import { useModel } from "@/components/provider/model-provider";
 import { useParams } from "next/navigation";
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 
 interface ChatMessage {
     user_question: string;
     chatbot_response: string;
+}
+
+async function uploadImage(blob: Blob): Promise<string> {
+    const formData = new FormData();
+    formData.append("files", blob);
+
+    const response = await fetch("http://localhost:1337/api/upload", {
+        method: "POST",
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to upload image: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result[0].url; // Trả về URL của ảnh đã upload
+}
+
+async function queryStableDiffusion(prompt: string) {
+    const API_KEY = "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";
+    if (!API_KEY) {
+        throw new Error("API key is not set.");
+    }
+
+    const response = await fetch(
+        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
+        {
+            headers: {
+                Authorization: `Bearer ${API_KEY}`,
+                "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({ inputs: prompt }),
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+    }
+    return await response.blob();
+}
+
+async function downloadImage(imageUrl: string) {
+    try {
+        // Kiểm tra nếu URL hợp lệ
+        if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+            throw new Error("Invalid image URL");
+        }
+
+        // Tải dữ liệu ảnh bằng fetch
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch the image. Status: ${response.status}`);
+        }
+
+        // Chuyển đổi dữ liệu thành Blob
+        const blob = await response.blob();
+
+        // Tạo URL Blob tạm thời
+        const downloadUrl = URL.createObjectURL(blob);
+
+        // Tạo thẻ <a> để tải xuống
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = "downloaded_image.png";
+
+        // Kích hoạt hành động tải xuống
+        document.body.appendChild(link); // Thêm vào DOM để hoạt động
+        link.click();
+        document.body.removeChild(link); // Gỡ bỏ sau khi hoàn tất
+
+        // Giải phóng URL Blob
+        URL.revokeObjectURL(downloadUrl);
+
+        console.log("Image downloaded successfully");
+    } catch (error) {
+        console.error("Error downloading the image:", error);
+    }
 }
 
 export default function Chatting() {
@@ -18,10 +97,42 @@ export default function Chatting() {
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [inputValue, setInputValue] = useState("");
+    const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
+
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+
+    // Hàm xử lý khi cuộn
+    const handleScroll = () => {
+        if (!chatContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+
+        // Hiển thị nút scroll khi không ở cuối
+        if (scrollHeight - scrollTop > clientHeight + 50) {
+            setShowScrollButton(true);
+        } else {
+            setShowScrollButton(false);
+        }
+    };
+
+    // Hàm cuộn xuống cuối
+    const scrollToBottom = () => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    };
+
+    useEffect(() => {
+        // Cuộn xuống cuối khi có tin nhắn mới
+        scrollToBottom();
+    }, [chatHistory]);
 
     useEffect(() => {
         if (id) {
-            fetchChatMessages(id as string); // Lấy tin nhắn bằng ID
+            fetchChatMessages(id);
         }
     }, [id]);
 
@@ -29,99 +140,42 @@ export default function Chatting() {
         setInputValue(event.target.value);
     };
 
-    async function queryStableDiffusion(prompt: string) {
-        const API_KEY = "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";
-        if (!API_KEY) {
-            throw new Error("API key is not set.");
-        }
-
-        const response = await fetch(
-            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
-            {
-                headers: {
-                    Authorization: `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json",
-                },
-                method: "POST",
-                body: JSON.stringify({ inputs: prompt }),
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status}`);
-        }
-        return await response.blob();
-    }
-
     const handleSubmit = async () => {
         if (inputValue.trim()) {
             const userQuestion = inputValue.trim();
             setInputValue("");
             setIsLoading(true);
 
-            // Cập nhật chatHistory với câu hỏi từ người dùng
-            setChatHistory((prevChat) => [
-                ...prevChat,
-                { chatbot_response: userQuestion, user_question: "" },
-            ]);
+            // Cập nhật trạng thái đang xử lý cho message
+            const loadingMessage = {
+                user_question: userQuestion,
+                chatbot_response: "loading...", // Placeholder
+            };
+            setChatHistory((prevChat) => [...prevChat, loadingMessage]);
 
             try {
-                let aiResponse;
+                let aiResponse = "";
                 let imageUrl = "";
 
                 if (selectedModel === "Stable Diffusion") {
                     const imageBlob = await queryStableDiffusion(userQuestion);
-                    const imageUrl = URL.createObjectURL(imageBlob);
+                    // Upload ảnh lên máy chủ và lấy URL
+                    imageUrl = await uploadImage(imageBlob);
 
-                    aiResponse = (
-                        <div className="flex flex-col items-start">
-                            <img
-                                src={imageUrl}
-                                alt="Stable Diffusion Output"
-                                className="max-w-full h-auto mb-2"
-                            />
-                            <button
-                                onClick={() => {
-                                    const link = document.createElement("a");
-                                    link.href = imageUrl;
-                                    link.download = "stable_diffusion_output.png";
-                                    link.click();
-                                }}
-                                className="flex items-center gap-2 bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] 
-                                text-white px-3 py-1 rounded-lg text-sm hover:opacity-90"
-                            >
-                                <img
-                                    src="/download-icon.svg"
-                                    alt="Download Icon"
-                                    className="w-4 h-4"
-                                />
-                                Download Image
-                            </button>
-                        </div>
-                    );
-
+                    aiResponse = imageUrl;
                 } else {
                     aiResponse = "This is a response from the T5 model.";
                 }
 
-                // Cập nhật chatHistory với phản hồi từ AI
+                // Cập nhật message với phản hồi thật từ API
                 setChatHistory((prevChat) => {
                     const updatedChat = [...prevChat];
-
-                    // Nếu aiResponse là React element, bạn có thể chuyển thành chuỗi mô tả hoặc lưu một giá trị thay thế
-                    const responseAsString = typeof aiResponse === "string"
-                        ? aiResponse
-                        : "[Generated Image]"; // Hoặc một chuỗi mô tả khác
-
-                    updatedChat[updatedChat.length - 1].chatbot_response = responseAsString;
+                    updatedChat[updatedChat.length - 1].chatbot_response = aiResponse;
                     return updatedChat;
                 });
 
-                console.log(userQuestion + " " + typeof aiResponse === "string" ? aiResponse : "Image response")
-
-                // Sau khi có câu trả lời từ AI, lưu tin nhắn vào database
-                await sendMessage(userQuestion, imageUrl || aiResponse);
-
+                await sendMessage(userQuestion, aiResponse);
+                await fetchChatMessages(id ?? "");
             } catch (error) {
                 console.error("An error occurred:", error);
                 setChatHistory((prevChat) => {
@@ -132,7 +186,38 @@ export default function Chatting() {
                 });
             } finally {
                 setIsLoading(false);
+                setLoadingIndex(null); // Tắt hiệu ứng loading
             }
+        }
+    };
+
+    const fetchChatMessages = async (chatId: string) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:1337/api/chat-sessions/${chatId}`);
+            const result = await response.json();
+
+            if (result.data && result.data.chat_messages) {
+                // Cập nhật chatbot_response nếu là đường dẫn tương đối
+                const updatedMessages = result.data.chat_messages.map((message: ChatMessage) => {
+                    if (message.chatbot_response.startsWith("/uploads/")) {
+                        return {
+                            ...message,
+                            chatbot_response: `http://localhost:1337${message.chatbot_response}`,
+                        };
+                    }
+                    return message;
+                });
+
+                setChatHistory(updatedMessages);
+            } else {
+                console.warn("No messages found in chat session.");
+                setChatHistory([]);
+            }
+        } catch (err) {
+            console.error("Error fetching chat messages:", err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -212,140 +297,258 @@ export default function Chatting() {
         }
     };
 
-    const fetchChatMessages = async (chatId: string) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch(`http://localhost:1337/api/chat-sessions/${chatId}`);
-            const result = await response.json();
+    const sendMessage = async (question: string, answer: string) => {
+        if (!id) return;
 
-            // Kiểm tra và lấy dữ liệu từ đúng vị trí
-            if (result.data && result.data.chat_messages) {
-                setChatHistory(result.data.chat_messages); // Sử dụng chat_messages
-            } else {
-                console.warn("No messages found in chat session.");
-                setChatHistory([]);
-            }
-        } catch (err) {
-            console.error("Error fetching chat messages:", err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        // Xác định loại dữ liệu trả về (text hoặc image)
+        const isImage = answer.startsWith("blob:")
+            || answer.startsWith("http://")
+            || answer.startsWith("https://")
+            || answer.startsWith("/uploads/");
+        const requestType = isImage ? "image" : "text";
 
-    const sendMessage = async (question: string, answer: string | React.ReactNode) => {
-        if (!id || !inputValue.trim()) return;
-
-        // Helper function để kiểm tra nếu `answer` là React element
-        const isReactElement = (node: React.ReactNode): node is React.ReactElement =>
-            typeof node === "object" && node !== null && "props" in node;
-
-        // Xác định `chatbot_response` dựa trên kiểu dữ liệu của `answer`
-        let chatbotResponse = "";
-
-        if (typeof answer === "string") {
-            chatbotResponse = answer;
-        } else if (isReactElement(answer)) {
-            chatbotResponse = answer.props?.children?.[0]?.props?.src || "";
-        }
-
-        // Thiết lập message mới trước khi gửi
         const newMessage = {
             data: {
-                request_type: typeof answer === "string" ? "text" : "image",                  // Loại yêu cầu, có thể là "text" hoặc "image"
-                chat_session: id,          // ID của session chat
-                user_question: question,               // Câu hỏi từ người dùng
-                chatbot_response: chatbotResponse // Đảm bảo chatbot_response là chuỗi
-            }
+                request_type: requestType,
+                chat_session: id,
+                user_question: question,
+                chatbot_response: answer,
+            },
         };
 
-        // Thêm message vào chat history tạm thời để hiển thị nhanh trên giao diện
-        setChatHistory((prev) => [
-            ...prev,
-            {
-                user_question: question,
-                chatbot_response: typeof answer === "string" ? answer : "[Generated Image]",
-            },
-        ]);
-
         try {
-            // Gửi request POST để lưu message vào Strapi
-            const response = await fetch(
-                `http://localhost:1337/api/chat-messages`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(newMessage),
-                }
-            );
+            const response = await fetch(`http://localhost:1337/api/chat-messages`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newMessage),
+            });
 
-            // Lấy message đã lưu từ phản hồi của Strapi
-            const savedMessage = await response.json();
-
-            // Cập nhật chat history với message đã lưu (nếu cần thiết)
-            setChatHistory((prev) =>
-                prev.map((msg, idx) => (idx === prev.length - 1 ? savedMessage.data : msg))
-            );
-        } catch (err) {
-            console.error("Error sending message:", err);
-        } finally {
-            // Xóa nội dung trong input sau khi gửi
-            setInputValue("");
+            if (!response.ok) {
+                throw new Error(`Failed to save message: ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-100 shadow rounded-lg p-6">
-            <div className="flex-grow overflow-y-auto space-y-4">
-                {isLoading ? (
-                    <p>Loading messages...</p>
-                ) : (
-                    <>
-                        {chatHistory.map((message, index) => (
-                            <div key={index} className="animate-fade-in">
-                                <div className="flex justify-end mb-2">
-                                    <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
-                                        <h2 className="text-md font-semibold">{message.user_question}</h2>
-                                    </div>
-                                    <img
-                                        src="/default-male.jpg"
-                                        alt="User Avatar"
-                                        className="w-10 h-10 rounded-full ml-2 mr-5"
+        <div className="flex flex-col h-screen bg-white shadow p-6">
+            <div className="flex-grow overflow-y-auto space-y-4"
+                ref={chatContainerRef}
+                onScroll={handleScroll}>
+                {chatHistory.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 py-14">
+                        <h1 className="text-3xl font-bold text-gray-800 mb-4 animate-typing overflow-hidden whitespace-nowrap border-r-4 border-r-gray-800">
+                            How can I assist you today?
+                        </h1>
+
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                            <button
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-500 rounded-full shadow text-blue-600 hover:bg-blue-100"
+                                disabled
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
                                     />
+                                </svg>
+                                Generate Image
+                            </button>
+                            <button
+                                className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-500 rounded-full shadow text-yellow-600 hover:bg-yellow-100"
+                                disabled
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Summarize Text
+                            </button>
+                            <button
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-500 rounded-full shadow text-purple-600 hover:bg-purple-100"
+                                disabled
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M8 6h13M8 12h10m-6 6h6M3 6h.01M3 12h.01M3 18h.01"
+                                    />
+                                </svg>
+                                Help Me Write
+                            </button>
+                            <button
+                                className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-500 rounded-full shadow text-green-600 hover:bg-green-100"
+                                disabled
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3 10h11M9 21V3m11 7h-7m0 0l-3 3m3-3l3-3"
+                                    />
+                                </svg>
+                                Analyze Data
+                            </button>
+                            <button
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-500 rounded-full shadow text-gray-600 hover:bg-gray-100"
+                                disabled
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3 10h11M9 21V3m11 7h-7m0 0l-3 3m3-3l3-3"
+                                    />
+                                </svg>
+                                More
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    chatHistory.map((message, index) => (
+                        <div key={index} className="animate-fade-in">
+                            <div className="flex justify-end mb-2">
+                                <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
+                                    <h2 className="text-md font-semibold">{message.user_question}</h2>
                                 </div>
-                                {message.chatbot_response && (
-                                    <div className="flex justify-start mb-2">
-                                        <img
-                                            src="/avt-chatbot.svg"
-                                            alt="AI Avatar"
-                                            className="w-10 h-10 rounded-full mr-2"
-                                        />
-                                        <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
-                                            {typeof message.chatbot_response === "string" ? (
-                                                <p>{message.chatbot_response}</p>
-                                            ) : (
-                                                message.chatbot_response
-                                            )}
+                                <img
+                                    src="/default-male.jpg"
+                                    alt="User Avatar"
+                                    className="w-10 h-10 rounded-full ml-2 mr-5"
+                                />
+                            </div>
+                            <div className="flex justify-start mb-2">
+                                <img
+                                    src="/avt-chatbot.svg"
+                                    alt="AI Avatar"
+                                    className="w-10 h-10 rounded-full mr-2"
+                                />
+
+                                {message.chatbot_response === "loading..." ? (
+                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="loader"></div>
+                                            <p>Processing...</p>
                                         </div>
+                                    </div>
+                                ) : message.chatbot_response.startsWith("http://") ||
+                                    message.chatbot_response.startsWith("https://") ? (
+                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                        <div className="flex flex-col items-start">
+                                            <img
+                                                src={message.chatbot_response}
+                                                alt="Stable Diffusion Output"
+                                                className="max-w-full h-auto mb-2"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    downloadImage(message.chatbot_response)
+                                                }}
+                                                className="flex items-center gap-2 bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] 
+                                        text-white px-3 py-1 rounded-lg text-sm hover:opacity-90"
+                                            >
+                                                <img
+                                                    src="/download-icon.svg"
+                                                    alt="Download Icon"
+                                                    className="w-4 h-4"
+                                                />
+                                                Download Image
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+
+                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                        {typeof message.chatbot_response === "string" ? (
+                                            <p>{message.chatbot_response}</p>
+                                        ) : (
+                                            message.chatbot_response
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        ))}
-                    </>
+                        </div>
+                    ))
                 )}
             </div>
 
-            <div className="mt-4 flex flex-col space-y-4">
+            <div className="sticky bottom-0 mt-4 flex flex-col space-y-4">
                 <div className="flex justify-center items-center">
-                    <button
-                        onClick={handleRegenerate}
-                        className="flex items-center gap-2 bg-gray-100 py-2 px-4 rounded-full shadow-md hover:bg-gray-200"
-                        disabled={isLoading}
-                    >
-                        <span className="text-gray-600">↻</span>
-                        <span className="text-gray-600">Regenerate response</span>
-                    </button>
+                    {/* Nút cuộn xuống */}
+                    {showScrollButton === true ? (
+                        <button
+                            onClick={scrollToBottom}
+                            className="flex items-center font-bold gap-2 bg-gray-100 py-2 px-4 rounded-full 
+                            shadow-md hover:bg-gray-200"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                                className="w-6 h-6"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 9l-7 7-7-7"
+                                />
+                            </svg>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleRegenerate}
+                            className="flex items-center gap-2 bg-gray-100 py-2 px-4 rounded-full shadow-md hover:bg-gray-200"
+                            disabled={isLoading}
+                        >
+                            <span className="text-gray-600">↻</span>
+                            <span className="text-gray-600">Regenerate response</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex items-center space-x-4">
