@@ -6,12 +6,7 @@ import { ChatMessage } from "@/components/types";
 import { useState, ChangeEvent, useEffect, useRef, useContext } from "react";
 import { useDashboardContext  } from "@/components/provider/dashboard-provicder";
 
-interface ChattingStartProps {
-    data: ChatMessage[];
-    selectedModel: string;
-}
-
-export function ChattingStartRoute() {
+export default function ChattingStartRoute() {
     const { selectedModel } = useDashboardContext(); // Lấy selectedModel từ DashboardContext
     const [inputValue, setInputValue] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
