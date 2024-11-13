@@ -1,33 +1,8 @@
-import Link from "next/link";
-import { ChattingStartRoute } from "./chat/page";
+import ChattingStartRoute from "./chat/page";
 import { ChatMessage } from "../../components/types";
 import { getUserMeLoader } from "@/app/data/services/get-user-me-loader";
 
-import { LogoutButton } from "../../components/custom/logout-button";
 import { DashboardProvider } from "@/components/provider/dashboard-provicder";
-
-interface AuthUserProps {
-  username: string;
-  email: string;
-}
-
-export function LoggedInUser({
-  userData,
-}: {
-  readonly userData: AuthUserProps;
-}) {
-  return (
-    <div className="flex gap-2">
-      <Link
-        href="/dashboard/account"
-        className="font-semibold hover:text-primary"
-      >
-        {userData.username}
-      </Link>
-      <LogoutButton />
-    </div>
-  );
-}
 
 export default async function DashboardRoute() {
   // const [chatData, setChatData] = useState<ChatMessage[]>([]);
