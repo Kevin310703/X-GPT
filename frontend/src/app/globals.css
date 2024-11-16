@@ -91,6 +91,11 @@ body {
   --tw-text-opacity: 1;
 }
 
+.bg-color-1B2559 {
+  background-color: #1B2559;
+  --tw-text-opacity: 1;
+}
+
 .color-purple {
   color: #4318FF;
 }
@@ -152,4 +157,22 @@ body {
 
 .text-red-600 {
   color: #dc2626;
+}
+
+.loader-fetchdata {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #8925e1;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
 }

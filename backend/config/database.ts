@@ -8,9 +8,9 @@ export default ({ env }) => {
       connection: {
         host: env('DATABASE_HOST', 'localhost'),
         port: env.int('DATABASE_PORT', 3306),
-        database: env('DATABASE_NAME', 'xgpt'),
-        user: env('DATABASE_USERNAME', 'VietKien'),
-        password: env('DATABASE_PASSWORD', 'VietKien123@'),
+        database: env('DATABASE_NAME', 'x-gpt'),
+        user: env('DATABASE_USERNAME', 'root'),
+        password: env('DATABASE_PASSWORD', '123456'),
         ssl: env.bool('DATABASE_SSL', false) && {
           key: env('DATABASE_SSL_KEY', undefined),
           cert: env('DATABASE_SSL_CERT', undefined),

@@ -14,11 +14,19 @@ function isProtectedRoute(path: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const user = await getUserMeLoader();
   const currentPath = request.nextUrl.pathname;
+  const user = await getUserMeLoader();
 
-  if (isProtectedRoute(currentPath) && user.ok === false) {
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  if (isProtectedRoute(currentPath)) {
+    if (!user.ok) {
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Redirect to dashboard only if the user is authenticated and accessing the root or `/auth/signin`
+  if (user.ok && (currentPath === "/" || currentPath === "/auth/signin")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

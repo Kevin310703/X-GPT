@@ -1,9 +1,10 @@
 'use client';
 
-import { updateChatSessionService } from '@/app/data/services/chat-service';
+import { deleteChatSessionService, updateNameChatSessionService } from '@/app/data/services/chat-service';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import ConfirmModal from './confirm-modal';
 
 type ChatSession = {
   id: string;
@@ -47,6 +48,11 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
 
   const [renameSessionId, setRenameSessionId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   const [sortedGroups, setSortedGroups] = useState<SortedChats>(sortedChats);
   useEffect(() => {
@@ -79,12 +85,49 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
   const handleRenameSubmit = (e: React.FormEvent<HTMLFormElement>, sessionId: string) => {
     e.preventDefault();
     if (newName.trim()) {
-      const updatedChat = updateChatSessionService(sessionId, newName.trim(), authToken ?? "");
-      console.log("Chat renamed successfully", updatedChat);
-
+      updateNameChatSessionService(sessionId, newName.trim(), authToken ?? "");
       setRenameSessionId(null); // Close rename input
-      // Làm mới trang sau khi tạo chat mới
-      window.location.reload();
+
+      setSuccessMessage('Chat renamed successfully!'); // Hiển thị thông báo thành công
+      setErrorMessage(null);
+
+
+      setTimeout(() => {
+        window.location.reload();
+        setSuccessMessage(null);
+      }, 2000); // Ẩn sau 3 giây
+    } else {
+      setErrorMessage("Failed to rename chat. Please try again."); // Hiển thị thông báo lỗi
+      setSuccessMessage(null);
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    if (!sessionToDelete) return;
+
+    try {
+      const result = await deleteChatSessionService(sessionToDelete, authToken);
+
+      if (result.success) {
+        setSessionToDelete(null); // Reset session ID
+        setIsModalOpen(false); // Đóng modal
+
+        setSuccessMessage('Chat session deleted successfully!');
+        setErrorMessage(null);
+
+        setTimeout(() => {
+          window.location.reload();
+          setSuccessMessage(null);
+        }, 2000);
+      } else {
+        console.error('Error deleting chat session:', result.error);
+        setErrorMessage("Failed to delete chat session. Please try again.");
+        setSuccessMessage(null);
+      }
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      setErrorMessage("Failed to delete chat session. Please try again.");
+      setSuccessMessage(null);
     }
   };
 
@@ -96,6 +139,19 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
     chatGroup.length > 0 && (
       <div className="mb-4">
         <h3 className="text-sm font-bold text-black">{groupTitle}</h3>
+
+        {/* Hiển thị ConfirmModal */}
+        <ConfirmModal
+          isOpen={isModalOpen}
+          title="Delete Chat Session"
+          message="Are you sure you want to delete this chat session? This action cannot be undone."
+          onConfirm={handleDeleteSession}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setSessionToDelete(null);
+          }}
+        />
+
         <ul className={`mt-2 space-y-1 ${className || "text-gray-600"}`}>
           {chatGroup.map((session) => (
             <li
@@ -161,9 +217,6 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
                 <div ref={menuRef}
                   className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-md z-10">
                   <ul className="py-1 text-gray-700">
-                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      Share
-                    </li>
                     <li
                       className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => {
@@ -174,10 +227,11 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
                     >
                       Rename
                     </li>
-                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                      Archive
-                    </li>
-                    <li className="px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer">
+                    <li onClick={() => {
+                      setIsModalOpen(true);
+                      setSessionToDelete(session.id);
+                    }}
+                      className="px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer">
                       Delete
                     </li>
                   </ul>
@@ -192,6 +246,21 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
 
   return (
     <div>
+      {/* Thông báo thành công */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md 
+        transition-transform transform duration-500 ease-out animate-fadeIn z-50">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Hiển thị thông báo lỗi */}
+      {errorMessage && (
+        <div className="bg-red-100 border border-red-500 text-red-700 px-4 py-2 rounded mb-4">
+          {errorMessage}
+        </div>
+      )}
+
       {renderChatGroup("Today", sortedChats.today)}
       {renderChatGroup("Yesterday", sortedChats.yesterday)}
       {renderChatGroup("This Week", sortedChats.thisWeek)}

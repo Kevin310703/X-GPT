@@ -4,9 +4,10 @@
 
 import { ChatMessage } from "@/components/types";
 import { useState, ChangeEvent, useEffect, useRef, useContext } from "react";
-import { useDashboardContext  } from "@/components/provider/dashboard-provicder";
+import { useDashboardContext } from "@/components/provider/dashboard-provicder";
+import { createChatSessionService } from "@/app/data/services/chat-service";
 
-export default function ChattingStartRoute() {
+export default function ChattingStartRoute({ authToken }: { authToken: string }) {
     const { selectedModel } = useDashboardContext(); // Lấy selectedModel từ DashboardContext
     const [inputValue, setInputValue] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -52,184 +53,176 @@ export default function ChattingStartRoute() {
             const userQuestion = inputValue.trim();
             setInputValue("");
             setIsLoading(true);
-
-            // Cập nhật chatHistory với câu hỏi từ người dùng
-            setChatHistory((prevChat) => [
-                ...prevChat,
-                { question: userQuestion, answer: "" },
-            ]);
-
+    
             try {
-                let aiResponse;
-
-                if (selectedModel === "Stable Diffusion") {
-                    const imageBlob = await queryStableDiffusion(userQuestion);
-                    const imageUrl = URL.createObjectURL(imageBlob);
-
-                    aiResponse = (
-                        <div className="flex flex-col items-start">
-                            <img
-                                src={imageUrl}
-                                alt="Stable Diffusion Output"
-                                className="max-w-full h-auto mb-2"
-                            />
-                            <button
-                                onClick={() => {
-                                    const link = document.createElement("a");
-                                    link.href = imageUrl;
-                                    link.download = "stable_diffusion_output.png";
-                                    link.click();
-                                }}
-                                className="flex items-center gap-2 bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] 
-                                text-white px-3 py-1 rounded-lg text-sm hover:opacity-90"
-                            >
-                                <img
-                                    src="/download-icon.svg"
-                                    alt="Download Icon"
-                                    className="w-4 h-4"
-                                />
-                                Download Image
-                            </button>
-                        </div>
-                    );
-
-                } else {
-                    aiResponse = "This is a response from the T5 model.";
+                // Gọi API để tạo phiên chat mới
+                const newChat = await createChatSessionService("New Chat", authToken);
+                if (!newChat || !newChat.data || !newChat.data.id) {
+                    throw new Error("Failed to create a new chat session.");
                 }
-
-                // Cập nhật chatHistory với phản hồi từ AI
-                setChatHistory((prevChat) => {
-                    const updatedChat = [...prevChat];
-                    updatedChat[updatedChat.length - 1].answer = aiResponse;
-                    return updatedChat;
-                });
+    
+                const newChatId = newChat.data.id;
+    
+                // Điều hướng sang trang Chatting với câu hỏi
+                const chatSessionURL = `/dashboard/chat/${newChatId}?question=${encodeURIComponent(
+                    userQuestion
+                )}`;
+                window.location.href = chatSessionURL; // Chuyển sang Chatting
             } catch (error) {
-                console.error("An error occurred:", error);
-                setChatHistory((prevChat) => {
-                    const updatedChat = [...prevChat];
-                    updatedChat[updatedChat.length - 1].answer =
-                        "An error occurred while processing your request.";
-                    return updatedChat;
-                });
+                console.error("Error creating or navigating to new chat session:", error);
             } finally {
                 setIsLoading(false);
             }
         }
     };
-
-    const handleRegenerate = async () => {
-        if (chatHistory.length > 0 && !isLoading) {
-            const lastQuestion = chatHistory[chatHistory.length - 1].question;
-
-            if (lastQuestion) {
-                setIsLoading(true);
-
-                // Cập nhật chatHistory với câu hỏi cuối cùng để hiển thị lại
-                setChatHistory((prevChat) => [
-                    ...prevChat,
-                    { question: lastQuestion, answer: "" },
-                ]);
-
-                try {
-                    let aiResponse;
-
-                    if (selectedModel === "Stable Diffusion") {
-                        const imageBlob = await queryStableDiffusion(lastQuestion);
-                        const imageUrl = URL.createObjectURL(imageBlob);
-
-                        aiResponse = (
-                            <div className="flex flex-col items-start">
-                                <img
-                                    src={imageUrl}
-                                    alt="Stable Diffusion Output"
-                                    className="max-w-full h-auto mb-2"
-                                />
-                                <button
-                                    onClick={() => {
-                                        const link = document.createElement("a");
-                                        link.href = imageUrl;
-                                        link.download = "stable_diffusion_output.png";
-                                        link.click();
-                                    }}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] 
-                                    text-white px-3 py-1 rounded-lg text-sm hover:opacity-90"
-                                >
-                                    <img
-                                        src="/download-icon.svg"
-                                        alt="Download Icon"
-                                        className="w-4 h-4"
-                                    />
-                                    Download Image
-                                </button>
-                            </div>
-                        );
-                    } else {
-                        aiResponse = "This is a response from the T5 model.";
-                    }
-
-                    setChatHistory((prevChat) => {
-                        const updatedChat = [...prevChat];
-                        updatedChat[updatedChat.length - 1].answer = aiResponse;
-                        return updatedChat;
-                    });
-                } catch (error) {
-                    console.error("An error occurred:", error);
-                    setChatHistory((prevChat) => {
-                        const updatedChat = [...prevChat];
-                        updatedChat[updatedChat.length - 1].answer =
-                            "An error occurred while processing your request.";
-                        return updatedChat;
-                    });
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        }
-    };
-
+    
     return (
         <div className="flex flex-col h-full p-6 items-center justify-center max-h-max">
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">How can I assist you today?</h1>
+            <div className="flex flex-col items-center justify-center space-y-4 py-14">
+                <h1 className="text-3xl font-bold text-gray-800 mb-4 animate-typing overflow-hidden whitespace-nowrap border-r-4 border-r-gray-800">
+                    How can I assist you today?
+                </h1>
+
+                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-500 rounded-full shadow text-blue-600 hover:bg-blue-100"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                            />
+                        </svg>
+                        Generate Image
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-500 rounded-full shadow text-yellow-600 hover:bg-yellow-100"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                            />
+                        </svg>
+                        Summarize Text
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-500 rounded-full shadow text-purple-600 hover:bg-purple-100"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M8 6h13M8 12h10m-6 6h6M3 6h.01M3 12h.01M3 18h.01"
+                            />
+                        </svg>
+                        Help Me Write
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-500 rounded-full shadow text-green-600 hover:bg-green-100"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 10h11M9 21V3m11 7h-7m0 0l-3 3m3-3l3-3"
+                            />
+                        </svg>
+                        Analyze Data
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-500 rounded-full shadow text-gray-600 hover:bg-gray-100"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 10h11M9 21V3m11 7h-7m0 0l-3 3m3-3l3-3"
+                            />
+                        </svg>
+                        More
+                    </button>
+                </div>
+            </div>
+
             <div
                 ref={chatContainerRef}
                 className="flex-grow overflow-y-auto space-y-4 w-full max-w-2xl"
             >
                 {/* Hiển thị phần chat của người dùng nếu có */}
-                {chatHistory.length === 0 ? (
-                    <p className="text-gray-500 text-center">No previous chats available. Ask a question!</p>
-                ) : (
-                    chatHistory.map((block: ChatMessage, index: number) => (
-                        <div key={index} className="animate-fade-in">
-                            <div className="flex justify-end mb-2">
-                                <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
-                                    <h2 className="text-md font-semibold">{block.question}</h2>
-                                </div>
-                                <img
-                                    src="/default-male.jpg"
-                                    alt="User Avatar"
-                                    className="w-10 h-10 rounded-full ml-2 mr-5"
-                                />
+                {chatHistory.map((block: ChatMessage, index: number) => (
+                    <div key={index} className="animate-fade-in">
+                        <div className="flex justify-end mb-2">
+                            <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
+                                <h2 className="text-md font-semibold">{block.question}</h2>
                             </div>
-
-                            {block.answer && (
-                                <div className="flex justify-start mb-2">
-                                    <img
-                                        src="/avt-chatbot.svg"
-                                        alt="AI Avatar"
-                                        className="w-10 h-10 rounded-full mr-2"
-                                    />
-                                    <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
-                                        {typeof block.answer === "string" ? (
-                                            <p>{block.answer}</p>
-                                        ) : (
-                                            block.answer
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                            <img
+                                src="/default-male.jpg"
+                                alt="User Avatar"
+                                className="w-10 h-10 rounded-full ml-2 mr-5"
+                            />
                         </div>
-                    ))
-                )}
+
+                        {block.answer && (
+                            <div className="flex justify-start mb-2">
+                                <img
+                                    src="/avt-chatbot.svg"
+                                    alt="AI Avatar"
+                                    className="w-10 h-10 rounded-full mr-2"
+                                />
+                                <div className="bg-gray-200 text-black rounded-lg p-3 max-w-md">
+                                    {typeof block.answer === "string" ? (
+                                        <p>{block.answer}</p>
+                                    ) : (
+                                        block.answer
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
             </div>
 
             <div className="mt-4 flex flex-col space-y-4 w-full max-w-2xl">

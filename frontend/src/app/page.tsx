@@ -30,7 +30,6 @@ interface StrapiResponse {
 
 export default function Home() {
   const [chatData, setChatData] = useState<ChatMessage[]>([]);
-  const { selectedModel } = useModel();
   const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   useEffect(() => {
@@ -57,7 +56,7 @@ export default function Home() {
     <div className="flex h-screen">
       <main className="flex-1 container mx-auto p-2">
         <div className="flex flex-col h-full">
-          <div className="flex-grow">
+          <div className="flex-grow mt-6">
             <ClientWrapper>
               {({ selectedModel }) => (
                 <ChattingStart data={chatData} selectedModel={selectedModel} />

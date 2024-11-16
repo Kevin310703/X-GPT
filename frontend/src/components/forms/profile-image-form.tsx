@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useActionState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -41,11 +41,35 @@ export function ProfileImageForm({
     initialState
   );
 
+  useEffect(() => {
+    if (formState.message) {
+      const timeout = setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [formState.message]);
+
   return (
-    <form className={cn("space-y-4", className)} action={formAction}>
+    <form className={cn("space-y-4 mb-16", className)} action={formAction}>
       <p className="text-xl font-semibold text-[#1B2559] mb-4 border-b pb-2">
         Avatar
       </p>
+
+      {/* Hiển thị thông báo */}
+      {formState.message && (
+        <p
+          className={cn(
+            "text-sm p-2 rounded-md mb-4",
+            formState.strapiErrors
+              ? "text-red-700 bg-red-100 border border-red-300"
+              : "text-green-700 bg-green-100 border border-green-300"
+          )}
+        >
+          {formState.message}
+        </p>
+      )}
 
       <div className="">
         <ImagePicker
@@ -58,7 +82,8 @@ export function ProfileImageForm({
         <StrapiErrors error={formState.strapiErrors} />
       </div>
       <div className="flex justify-end">
-        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF]" text="Update Image" loadingText="Saving Image" />
+        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] hover:shadow-lg transition-colors" 
+        text="Update Image" loadingText="Saving Image" />
       </div>
     </form>
   );

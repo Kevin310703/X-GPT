@@ -2,6 +2,13 @@ import { getUserMeLoader } from "@/app/data/services/get-user-me-loader";
 import { ProfileForm } from "@/components/forms/profile-form";
 import { ProfileImageForm } from "@/components/forms/profile-image-form";
 
+export async function generateMetadata() {
+  return {
+    title: "Your Profile",
+    description: `This is the profile page for user ID.`,
+  };
+}
+
 export default async function AccountRoute() {
   const user = await getUserMeLoader();
   const userData = user.data;

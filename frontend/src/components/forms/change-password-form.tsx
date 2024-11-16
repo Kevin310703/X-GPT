@@ -83,7 +83,7 @@ export function ChangePasswordForm() {
 
                 <Card className="max-w-lg border-none rounded-none shadow-white">
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-3xl font-bold">Change password</CardTitle>
+                        <CardTitle className="text-3xl font-bold text-[#1B2559]">Change password</CardTitle>
                         <CardDescription>
                             Enter your details to change your password
                         </CardDescription>

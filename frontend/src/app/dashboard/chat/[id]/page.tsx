@@ -1,7 +1,7 @@
 "use client";
 
 import { useModel } from "@/components/provider/model-provider";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, ChangeEvent, useRef } from "react";
 
 interface ChatMessage {
@@ -93,11 +93,15 @@ export default function Chatting() {
     const idCombo = Array.isArray(params.id) ? params.id[0] : params.id;
     const id = idCombo ? idCombo.split('-')[0] : null;
 
+    const searchParams = useSearchParams();
+    const initialQuestion = searchParams.get("question"); // Lấy câu hỏi từ query parameter
+
     const { selectedModel } = useModel();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [inputValue, setInputValue] = useState("");
-    const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
+    const [loadingIndex, setLoadingIndex] = useState<number | null>(null); // Trạng thái loading xử lý request
+    const [isInitialLoading, setIsInitialLoading] = useState(true); // Thêm trạng thái loading tải dữ liệu ngay khi mới vào trang
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -136,6 +140,33 @@ export default function Chatting() {
         }
     }, [id]);
 
+    useEffect(() => {
+        // Gọi API để tải dữ liệu
+        const loadInitialData = async () => {
+            try {
+                setIsInitialLoading(true); // Bắt đầu hiệu ứng loading
+                await fetchChatMessages(id ?? ""); // Hàm API
+            } catch (err) {
+                console.error("Error loading initial data:", err);
+            } finally {
+                setIsInitialLoading(false); // Kết thúc hiệu ứng loading
+            }
+        };
+
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        // Nếu có câu hỏi ban đầu, thêm nó vào chatHistory và xử lý
+        if (initialQuestion) {
+            setChatHistory((prevChat) => [
+                ...prevChat,
+                { user_question: initialQuestion, chatbot_response: "loading..." },
+            ]);
+            handleAutoReply(initialQuestion); // Tự động xử lý câu hỏi
+        }
+    }, [initialQuestion]);
+
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         setInputValue(event.target.value);
     };
@@ -146,48 +177,52 @@ export default function Chatting() {
             setInputValue("");
             setIsLoading(true);
 
-            // Cập nhật trạng thái đang xử lý cho message
-            const loadingMessage = {
-                user_question: userQuestion,
-                chatbot_response: "loading...", // Placeholder
-            };
-            setChatHistory((prevChat) => [...prevChat, loadingMessage]);
+            // Cập nhật chatHistory với câu hỏi của người dùng
+            setChatHistory((prevChat) => [
+                ...prevChat,
+                { user_question: userQuestion, chatbot_response: "loading..." },
+            ]);
 
-            try {
-                let aiResponse = "";
-                let imageUrl = "";
+            await handleAutoReply(userQuestion); // Xử lý câu hỏi
+            setIsLoading(false);
+        }
+    };
 
-                if (selectedModel === "Stable Diffusion") {
-                    const imageBlob = await queryStableDiffusion(userQuestion);
-                    // Upload ảnh lên máy chủ và lấy URL
-                    imageUrl = await uploadImage(imageBlob);
+    const handleAutoReply = async (question: string) => {
+        try {
+            let aiResponse = "";
+            let imageUrl = "";
 
-                    aiResponse = imageUrl;
-                } else {
-                    aiResponse = "This is a response from the T5 model.";
-                }
+            if (selectedModel === "Stable Diffusion") {
+                const imageBlob = await queryStableDiffusion(question);
+                // Upload ảnh lên máy chủ và lấy URL
+                imageUrl = await uploadImage(imageBlob);
 
-                // Cập nhật message với phản hồi thật từ API
-                setChatHistory((prevChat) => {
-                    const updatedChat = [...prevChat];
-                    updatedChat[updatedChat.length - 1].chatbot_response = aiResponse;
-                    return updatedChat;
-                });
-
-                await sendMessage(userQuestion, aiResponse);
-                await fetchChatMessages(id ?? "");
-            } catch (error) {
-                console.error("An error occurred:", error);
-                setChatHistory((prevChat) => {
-                    const updatedChat = [...prevChat];
-                    updatedChat[updatedChat.length - 1].chatbot_response =
-                        "An error occurred while processing your request.";
-                    return updatedChat;
-                });
-            } finally {
-                setIsLoading(false);
-                setLoadingIndex(null); // Tắt hiệu ứng loading
+                aiResponse = imageUrl;
+            } else {
+                aiResponse = "This is a response from the T5 model.";
             }
+
+            // Cập nhật message với phản hồi thật từ API
+            setChatHistory((prevChat) => {
+                const updatedChat = [...prevChat];
+                updatedChat[updatedChat.length - 1].chatbot_response = aiResponse;
+                return updatedChat;
+            });
+
+            await sendMessage(question, aiResponse);
+            await fetchChatMessages(id ?? "");
+        } catch (error) {
+            console.error("An error occurred:", error);
+            setChatHistory((prevChat) => {
+                const updatedChat = [...prevChat];
+                updatedChat[updatedChat.length - 1].chatbot_response =
+                    "An error occurred while processing your request.";
+                return updatedChat;
+            });
+        } finally {
+            setIsLoading(false);
+            setLoadingIndex(null); // Tắt hiệu ứng loading
         }
     };
 
@@ -332,6 +367,15 @@ export default function Chatting() {
             console.error("Error sending message:", error);
         }
     };
+
+    if (isInitialLoading) {
+        // Hiển thị giao diện loading
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="loader-fetchdata"></div> {/* Hiệu ứng spinner */}
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-screen bg-white shadow p-6">
@@ -515,7 +559,7 @@ export default function Chatting() {
                 )}
             </div>
 
-            <div className="sticky bottom-0 mt-4 flex flex-col space-y-4">
+            <div className="sticky bottom-0 mt-4 mb-12 flex flex-col space-y-4">
                 <div className="flex justify-center items-center">
                     {/* Nút cuộn xuống */}
                     {showScrollButton === true ? (

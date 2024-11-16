@@ -10,6 +10,12 @@ import {
   fileUploadService,
 } from "@/app/data/services/file-service";
 
+interface UpdateProfileResponse {
+  data: any;
+  strapiErrors: any | null;
+  message: string;
+}
+
 export async function updateProfileAction(
   userId: string,
   prevState: any,
@@ -45,7 +51,7 @@ export async function updateProfileAction(
     return {
       ...prevState,
       strapiErrors: responseData.error,
-      message: "Failed to Register.",
+      message: "Failed to updated your profile.",
     };
   }
 

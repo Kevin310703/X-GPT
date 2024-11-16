@@ -15,8 +15,16 @@ export async function Header() {
             {<ModelForm />}
 
             <div className="flex items-center gap-4">
-                <Link href="/auth/signin"><Button>Sign In</Button></Link>
-                <Link href="/auth/signup"><Button>Sign Up</Button></Link>
+                <Link href="/auth/signin">
+                    <Button>
+                        Sign In
+                    </Button>
+                </Link>
+                <Link href="/auth/signup">
+                    <Button>
+                        Sign Up
+                    </Button>
+                </Link>
             </div>
         </div>
     );

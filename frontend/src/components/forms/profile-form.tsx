@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+
+import React, { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useActionState } from "react";
 import { updateProfileAction } from "@/app/data/actions/profile-actions";
@@ -24,16 +25,6 @@ const INITIAL_STATE = {
   message: null,
 };
 
-function CountBox({ text }: { readonly text: number }) {
-  const style = "font-bold text-md mx-1";
-  const color = text > 0 ? "text-primary" : "text-red-500";
-  return (
-    <div className="flex items-center justify-center h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none">
-      You have<span className={cn(style, color)}>{text}</span>credit(s)
-    </div>
-  );
-}
-
 export function ProfileForm({
   data,
   className,
@@ -48,11 +39,35 @@ export function ProfileForm({
     INITIAL_STATE
   );
 
+  useEffect(() => {
+    if (formState.message) {
+      const timeout = setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [formState.message]);
+
   return (
     <form className={cn("space-y-4", className)} action={formAction}>
       <p className="text-xl font-semibold text-[#1B2559] mb-4 border-b pb-2">
         Your Information
       </p>
+
+      {/* Hiển thị thông báo */}
+      {formState.message && (
+        <p
+          className={cn(
+            "text-sm p-2 rounded-md mb-4",
+            formState.strapiErrors
+              ? "text-red-700 bg-red-100 border border-red-300"
+              : "text-green-700 bg-green-100 border border-green-300"
+          )}
+        >
+          {formState.message}
+        </p>
+      )}
 
       <div className="space-y-4 grid ">
         <div className="grid grid-cols-2 gap-4">
@@ -70,7 +85,6 @@ export function ProfileForm({
             defaultValue={data.email || ""}
             disabled
           />
-          {/* <CountBox text={data.credits} /> */}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -97,7 +111,7 @@ export function ProfileForm({
         />
       </div>
       <div className="flex justify-end">
-        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF]" text="Update Profile" loadingText="Saving Profile" />
+        <SubmitButton className="bg-gradient-to-r from-[#4A25E1] to-[#7B5AFF] hover:shadow-lg transition-colors" text="Update Profile" loadingText="Saving Profile" />
       </div>
       <StrapiErrors error={formState?.strapiErrors} />
     </form>
