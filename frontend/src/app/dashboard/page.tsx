@@ -15,7 +15,7 @@ export default async function DashboardRoute() {
         <main className="flex-1 container mx-auto p-2">
           <div className="flex flex-col h-full">
             <div className="flex-grow">
-              <ChattingStartRoute authToken={authToken} />
+              <ChattingStartRoute authToken={authToken} userId={user.data.id} />
             </div>
           </div>
         </main>

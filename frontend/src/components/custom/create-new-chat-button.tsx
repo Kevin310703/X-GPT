@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createChatSessionService } from "@/app/data/services/chat-service";
 import { fetchChatSessions } from "@/app/data/loaders";
 
-const NewChatButton = ({ authToken }: { authToken: string }) => {
+const NewChatButton = ({ authToken, userId }: { authToken: string, userId: string }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -14,7 +14,7 @@ const NewChatButton = ({ authToken }: { authToken: string }) => {
         setIsLoading(true); // Bắt đầu tải
 
         try {
-            const newChat = await createChatSessionService("New Chat", authToken);
+            const newChat = await createChatSessionService("New chat", userId, authToken);
             console.log("New Chat Session Created:", newChat);
             fetchChatSessions(authToken); // Cập nhật danh sách Chat Sessions
             setSuccessMessage('Created new chat successfully!'); // Hiển thị thông báo thành công

@@ -16,6 +16,12 @@ export function ClearConversationsButton({ authToken }: { authToken: string }) {
         try {
             await deleteAllChatSessions(authToken);
             setMessage("All conversations have been cleared successfully!");
+
+            setTimeout(() => {
+                window.location.reload();
+                window.location.href = "/dashboard/"; // Chuyển sang Chatting
+                setMessage(null);
+            }, 2000);
         } catch (error) {
             setMessage("Failed to clear conversations. Please try again.");
             console.error("Error clearing conversations:", error);
@@ -27,6 +33,13 @@ export function ClearConversationsButton({ authToken }: { authToken: string }) {
 
     return (
         <div>
+            {message && (
+                <div className={`fixed top-16 right-4 ${message.includes("success") ? "bg-green-500" : "text-red-500"} text-white px-4 py-2 rounded-lg shadow-md 
+        transition-transform transform duration-500 ease-out animate-fadeIn z-50`}>
+                    {message}
+                </div>
+            )}
+
             <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center gap-2 hover:text-gray-800 mb-3"
@@ -46,12 +59,6 @@ export function ClearConversationsButton({ authToken }: { authToken: string }) {
                 onConfirm={handleClearConversations}
                 onCancel={() => setIsModalOpen(false)}
             />
-
-            {message && (
-                <p className={`mt-2 ${message.includes("success") ? "text-green-500" : "text-red-500"}`}>
-                    {message}
-                </p>
-            )}
         </div>
     );
 }

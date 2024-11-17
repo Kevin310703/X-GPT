@@ -7,7 +7,7 @@ import { useState, ChangeEvent, useEffect, useRef, useContext } from "react";
 import { useDashboardContext } from "@/components/provider/dashboard-provicder";
 import { createChatSessionService } from "@/app/data/services/chat-service";
 
-export default function ChattingStartRoute({ authToken }: { authToken: string }) {
+export default function ChattingStartRoute({ authToken, userId }: { authToken: string, userId: string }) {
     const { selectedModel } = useDashboardContext(); // Lấy selectedModel từ DashboardContext
     const [inputValue, setInputValue] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -56,7 +56,7 @@ export default function ChattingStartRoute({ authToken }: { authToken: string })
     
             try {
                 // Gọi API để tạo phiên chat mới
-                const newChat = await createChatSessionService("New Chat", authToken);
+                const newChat = await createChatSessionService("New chat", userId, authToken);
                 if (!newChat || !newChat.data || !newChat.data.id) {
                     throw new Error("Failed to create a new chat session.");
                 }

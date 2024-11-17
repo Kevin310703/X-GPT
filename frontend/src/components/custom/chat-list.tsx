@@ -248,7 +248,7 @@ export default function ChatList({ sortedChats, authToken }: { sortedChats: Sort
     <div>
       {/* Thông báo thành công */}
       {successMessage && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md 
+        <div className="fixed top-16 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md 
         transition-transform transform duration-500 ease-out animate-fadeIn z-50">
           {successMessage}
         </div>

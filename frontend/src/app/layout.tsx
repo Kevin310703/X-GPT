@@ -141,7 +141,7 @@ export default async function RootLayout({
                       </Link>
                     </div>
 
-                    <NewChatButton authToken={authToken ?? ""} />
+                    <NewChatButton authToken={authToken ?? ""} userId={user.data.id} />
 
                     <div className="flex-1 overflow-y-auto mt-4">
                       {/* Hiển thị lịch sử chat khi có dữ liệu */}

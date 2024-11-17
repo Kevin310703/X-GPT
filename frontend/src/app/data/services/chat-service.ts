@@ -16,7 +16,7 @@ interface ChatSessionsResponse {
     data: ChatSession[];
 }
 
-export async function createChatSessionService(title: string, authToken: string) {
+export async function createChatSessionService(title: string, userId: string, authToken: string) {
     const url = new URL("/api/chat-sessions", baseUrl);
 
     try {
@@ -27,7 +27,9 @@ export async function createChatSessionService(title: string, authToken: string)
                 Authorization: `Bearer ${authToken}`,
             },
             body: JSON.stringify({
-                data: { title }, // Đúng cấu trúc JSON Strapi yêu cầu
+                data: { title,
+                    users_permissions_user: userId,
+                 }, // Đúng cấu trúc JSON Strapi yêu cầu
             }),
             cache: "no-cache",
         });
@@ -38,7 +40,7 @@ export async function createChatSessionService(title: string, authToken: string)
     }
 }
 
-const getDocumentIdById = async (id: string) => {
+const getChatSessionsDocumentIdById = async (id: string) => {
     try {
         const response = await fetch(`http://localhost:1337/api/chat-sessions/${id}`);
 
@@ -63,7 +65,7 @@ const getDocumentIdById = async (id: string) => {
 };
 
 export async function updateNameChatSessionService(sessionId: string, title: string, authToken: string) {
-    const documentId = await getDocumentIdById(sessionId);
+    const documentId = await getChatSessionsDocumentIdById(sessionId);
     const url = new URL(`/api/chat-sessions/${documentId}`, baseUrl);
 
     try {
@@ -86,13 +88,13 @@ export async function updateNameChatSessionService(sessionId: string, title: str
 }
 
 export async function deleteChatSessionService(sessionId: string, authToken: string) {
-    const documentId = await getDocumentIdById(sessionId);
+    const documentId = await getChatSessionsDocumentIdById(sessionId);
     const sessionUrl = new URL(`/api/chat-sessions/${documentId}`, baseUrl);
     const messagesUrl = new URL(`/api/chat-messages`, baseUrl); // URL cho các messages
 
     try {
         // Gọi API để lấy tất cả các messages liên kết với session
-        const messagesResponse = await fetch(`${messagesUrl}?filters[chat_session][id][$eq]=${documentId}`, {
+        const messagesResponse = await fetch(`${messagesUrl}?filters[chat_session][id][$eq]=${sessionId}`, {
             headers: {
                 Authorization: `Bearer ${authToken}`,
             },
@@ -105,8 +107,8 @@ export async function deleteChatSessionService(sessionId: string, authToken: str
         const messagesData = await messagesResponse.json();
 
         // Xóa từng message liên kết với session
-        const deletePromises = messagesData.data.map(async (message: { id: string }) => {
-            const messageUrl = new URL(`/api/chat-messages/${message.id}`, baseUrl);
+        const deletePromises = messagesData.data.map(async (message: { documentId: string }) => {
+            const messageUrl = new URL(`/api/chat-messages/${message.documentId}`, baseUrl);
             const response = await fetch(messageUrl.toString(), {
                 method: "DELETE",
                 headers: {
@@ -115,7 +117,7 @@ export async function deleteChatSessionService(sessionId: string, authToken: str
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to delete message with ID: ${message.id}. Status: ${response.status}`);
+                throw new Error(`Failed to delete message with ID: ${message.documentId}. Status: ${response.status}`);
             }
         });
 
@@ -123,7 +125,7 @@ export async function deleteChatSessionService(sessionId: string, authToken: str
         await Promise.all(deletePromises);
 
         // Xóa session sau khi xóa các messages
-        const sessionResponse = await fetch(sessionUrl.toString(), {
+        const sessionResponse = await fetch(sessionUrl, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authToken}`,
