@@ -3,6 +3,7 @@
 import { useModel } from "@/components/provider/model-provider";
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, ChangeEvent, useRef } from "react";
+import { detectLanguage, queryStableDiffusion, queryVietAI } from "@/app/data/services/model-service";
 
 interface ChatMessage {
     user_question: string;
@@ -24,30 +25,6 @@ async function uploadImage(blob: Blob): Promise<string> {
 
     const result = await response.json();
     return result[0].url; // Trả về URL của ảnh đã upload
-}
-
-async function queryStableDiffusion(prompt: string) {
-    const API_KEY = "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";
-    if (!API_KEY) {
-        throw new Error("API key is not set.");
-    }
-
-    const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
-        {
-            headers: {
-                Authorization: `Bearer ${API_KEY}`,
-                "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({ inputs: prompt }),
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-    }
-    return await response.blob();
 }
 
 async function downloadImage(imageUrl: string) {
@@ -195,12 +172,14 @@ export default function Chatting() {
 
             if (selectedModel === "Stable Diffusion") {
                 const imageBlob = await queryStableDiffusion(question);
-                // Upload ảnh lên máy chủ và lấy URL
-                imageUrl = await uploadImage(imageBlob);
+                imageUrl = await uploadImage(imageBlob); // Upload ảnh lên máy chủ và lấy URL
 
                 aiResponse = imageUrl;
             } else {
-                aiResponse = "This is a response from the T5 model.";
+                const language = await detectLanguage(question);
+                const language_target = language === "en" ? "vi" : "en";
+                aiResponse = await queryVietAI(question);
+                console.log("Translated text:", aiResponse); // Kết quả dịch
             }
 
             // Cập nhật message với phản hồi thật từ API
@@ -496,7 +475,7 @@ export default function Chatting() {
                         <div key={index} className="animate-fade-in">
                             <div className="flex justify-end mb-2">
                                 <div className="bg-blue-500 text-white rounded-lg p-3 max-w-md text-right">
-                                    <h2 className="text-md font-semibold">{message.user_question}</h2>
+                                    <h2 className="text-md text-justify font-semibold">{message.user_question}</h2>
                                 </div>
                                 <img
                                     src="/default-male.jpg"
