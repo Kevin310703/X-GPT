@@ -3,7 +3,7 @@
 import { useModel } from "@/components/provider/model-provider";
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, ChangeEvent, useRef } from "react";
-import { detectLanguage, queryStableDiffusion, queryVietAI } from "@/app/data/services/model-service";
+import { queryStableDiffusion, queryVietAI } from "@/app/data/services/model-service";
 
 interface ChatMessage {
     user_question: string;
@@ -134,13 +134,15 @@ export default function Chatting() {
     }, []);
 
     useEffect(() => {
-        // Nếu có câu hỏi ban đầu, thêm nó vào chatHistory và xử lý
         if (initialQuestion) {
+            console.log("Initial Question:", initialQuestion);
             setChatHistory((prevChat) => [
                 ...prevChat,
                 { user_question: initialQuestion, chatbot_response: "loading..." },
             ]);
-            handleAutoReply(initialQuestion); // Tự động xử lý câu hỏi
+            handleAutoReply(initialQuestion);
+        } else {
+            console.warn("No initial question provided!");
         }
     }, [initialQuestion]);
 
@@ -176,8 +178,6 @@ export default function Chatting() {
 
                 aiResponse = imageUrl;
             } else {
-                const language = await detectLanguage(question);
-                const language_target = language === "en" ? "vi" : "en";
                 aiResponse = await queryVietAI(question);
                 console.log("Translated text:", aiResponse); // Kết quả dịch
             }
@@ -185,7 +185,11 @@ export default function Chatting() {
             // Cập nhật message với phản hồi thật từ API
             setChatHistory((prevChat) => {
                 const updatedChat = [...prevChat];
-                updatedChat[updatedChat.length - 1].chatbot_response = aiResponse;
+                if (updatedChat.length > 0) {
+                    updatedChat[updatedChat.length - 1].chatbot_response = aiResponse;
+                } else {
+                    console.warn("No previous message to update chatbot_response.");
+                }
                 return updatedChat;
             });
 
@@ -195,8 +199,10 @@ export default function Chatting() {
             console.error("An error occurred:", error);
             setChatHistory((prevChat) => {
                 const updatedChat = [...prevChat];
-                updatedChat[updatedChat.length - 1].chatbot_response =
-                    "An error occurred while processing your request.";
+                if (updatedChat.length > 0) {
+                    updatedChat[updatedChat.length - 1].chatbot_response =
+                        "An error occurred while processing your request.";
+                }
                 return updatedChat;
             });
         } finally {

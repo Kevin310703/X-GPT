@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { ChatMessage } from "../components/types";
-import { ChattingStart } from "@/components/custom/chatting-start";
+import { ChattingStart } from "@/components/custom/chatting-start-home";
 import { useModel } from "@/components/provider/model-provider";
 import { ClientWrapper } from "@/components/custom/client-wrapper";
 

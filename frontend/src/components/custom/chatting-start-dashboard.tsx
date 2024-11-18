@@ -3,11 +3,11 @@
 "use client";
 
 import { ChatMessage } from "@/components/types";
-import { useState, ChangeEvent, useEffect, useRef, useContext } from "react";
-import { useDashboardContext } from "@/components/provider/dashboard-provicder";
+import { useState, ChangeEvent, useEffect, useRef } from "react";
+import { useDashboardContext } from "@/components/provider/dashboard-provider";
 import { createChatSessionService } from "@/app/data/services/chat-service";
 
-export default function ChattingStartRoute({ authToken, userId }: { authToken: string, userId: string }) {
+export default function ChattingStartDashboard({ authToken, userId }: { authToken: string, userId: string }) {
     const { selectedModel } = useDashboardContext(); // Lấy selectedModel từ DashboardContext
     const [inputValue, setInputValue] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -24,50 +24,27 @@ export default function ChattingStartRoute({ authToken, userId }: { authToken: s
         }
     }, [chatHistory]);
 
-    async function queryStableDiffusion(prompt: string) {
-        const API_KEY = "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";
-        if (!API_KEY) {
-            throw new Error("API key is not set.");
-        }
-
-        const response = await fetch(
-            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
-            {
-                headers: {
-                    Authorization: `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json",
-                },
-                method: "POST",
-                body: JSON.stringify({ inputs: prompt }),
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status}`);
-        }
-        return await response.blob();
-    }
-
     const handleSubmit = async () => {
         if (inputValue.trim()) {
             const userQuestion = inputValue.trim();
             setInputValue("");
             setIsLoading(true);
-    
+
             try {
                 // Gọi API để tạo phiên chat mới
                 const newChat = await createChatSessionService("New chat", userId, authToken);
                 if (!newChat || !newChat.data || !newChat.data.id) {
                     throw new Error("Failed to create a new chat session.");
                 }
-    
+
                 const newChatId = newChat.data.id;
-    
+
                 // Điều hướng sang trang Chatting với câu hỏi
                 const chatSessionURL = `/dashboard/chat/${newChatId}?question=${encodeURIComponent(
                     userQuestion
                 )}`;
                 window.location.href = chatSessionURL; // Chuyển sang Chatting
+
             } catch (error) {
                 console.error("Error creating or navigating to new chat session:", error);
             } finally {
@@ -75,7 +52,7 @@ export default function ChattingStartRoute({ authToken, userId }: { authToken: s
             }
         }
     };
-    
+
     return (
         <div className="flex flex-col h-full p-6 items-center justify-center max-h-max">
             <div className="flex flex-col items-center justify-center space-y-4 py-14">

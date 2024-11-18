@@ -4,34 +4,11 @@
 
 import { useState, ChangeEvent, useEffect, useRef } from "react";
 import { ChatMessage } from "../types";
+import { queryStableDiffusion, queryVietAI } from "@/app/data/services/model-service";
 
 interface ChattingStartProps {
     data: ChatMessage[];
     selectedModel: string;
-}
-
-async function queryStableDiffusion(prompt: string) {
-    const API_KEY = "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";
-    if (!API_KEY) {
-        throw new Error("API key is not set.");
-    }
-
-    const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
-        {
-            headers: {
-                Authorization: `Bearer ${API_KEY}`,
-                "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({ inputs: prompt }),
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-    }
-    return await response.blob();
 }
 
 export function ChattingStart({ data, selectedModel }: ChattingStartProps) {
@@ -106,7 +83,8 @@ export function ChattingStart({ data, selectedModel }: ChattingStartProps) {
                     );
 
                 } else {
-                    aiResponse = "This is a response from the T5 model.";
+                    aiResponse = await queryVietAI(userQuestion);
+                    console.log("Translated text:", aiResponse); // Kết quả dịch
                 }
 
                 // Cập nhật chatHistory với phản hồi từ AI
