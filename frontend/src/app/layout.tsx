@@ -29,7 +29,7 @@ import ChatManager from "@/components/custom/chat-manager";
 import { logoutAction } from "./data/actions/auth-actions";
 import ProfileDropdown from "@/components/custom/profile-dropdown";
 import { ClearConversationsButton } from "@/components/custom/clear-conversations-button";
-import { redirect } from "next/navigation";
+import { getStrapiURL } from "@/lib/utils";
 
 const classifyChatsByDate = (chatSessions: any[]) => {
   const today: any[] = [];
@@ -108,7 +108,8 @@ export default async function RootLayout({
 }>) {
   const authToken = await getAuthToken() ?? "";
   const user = authToken ? await getUserMeLoader() : null;
-
+  const baseUrl = getStrapiURL();
+  
   if (!authToken) {
     console.warn("Missing authentication token");
   } else if (!user?.ok) {
@@ -171,7 +172,7 @@ export default async function RootLayout({
                     <div className="flex items-center gap-3 mt-6">
                       <Link href={`/dashboard/account/${user.data.documentId}`} passHref>
                         <div className="flex items-center mr-28 gap-2">
-                          <img src={`http://localhost:1337${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full" />
+                          <img src={baseUrl + `${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full" />
                           <div className="flex-1">
                             <p className="font-semibold">{user.data.username}</p>
                           </div>

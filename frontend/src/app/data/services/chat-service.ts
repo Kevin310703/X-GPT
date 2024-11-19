@@ -41,8 +41,9 @@ export async function createChatSessionService(title: string, userId: string, au
 }
 
 const getChatSessionsDocumentIdById = async (id: string) => {
+    const url = new URL(`/api/chat-sessions/${id}`, baseUrl);
     try {
-        const response = await fetch(`http://localhost:1337/api/chat-sessions/${id}`);
+        const response = await fetch(url);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch chat session by ID: ${response.statusText}`);

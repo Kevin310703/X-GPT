@@ -2,11 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getStrapiURL } from "@/lib/utils";
 
 export default function ProfileDropdown({ user, logoutAction }: { user: any; logoutAction: any }) {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+  const baseUrl = getStrapiURL();
+  
   // Toggle dropdown visibility
   const toggleDropdown = () => setDropdownVisible((prev) => !prev);
 
@@ -34,7 +36,7 @@ export default function ProfileDropdown({ user, logoutAction }: { user: any; log
         aria-expanded={dropdownVisible}
       >
         <img
-          src={`http://localhost:1337${user.data?.image?.url}`}
+          src={baseUrl + `${user.data?.image?.url}`}
           alt="Profile"
           className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-md hover:border-blue-500 transition-all duration-300"
         />

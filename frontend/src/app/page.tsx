@@ -6,6 +6,7 @@ import { ChatMessage } from "../components/types";
 import { ChattingStart } from "@/components/custom/chatting-start-home";
 import { useModel } from "@/components/provider/model-provider";
 import { ClientWrapper } from "@/components/custom/client-wrapper";
+import { getStrapiURL } from "@/lib/utils";
 
 interface Model {
   id: number;
@@ -31,11 +32,13 @@ interface StrapiResponse {
 export default function Home() {
   const [chatData, setChatData] = useState<ChatMessage[]>([]);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const baseUrl = getStrapiURL();
 
   useEffect(() => {
     async function fetchModels() {
       try {
-        const res = await fetch("http://localhost:1337/api/models");
+        const url = new URL("/api/models", baseUrl);
+        const res = await fetch(url);
         const data: StrapiResponse = await res.json();
 
         console.log("Response from Strapi:", data);

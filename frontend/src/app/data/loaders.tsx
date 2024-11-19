@@ -34,7 +34,8 @@ export async function getGlobalPageMetadata() {
 }
 
 export async function fetchChatSessions(authToken: string) {
-  const response = await fetch("http://localhost:1337/api/chat-sessions", {
+  const url = new URL("/api/chat-sessions", baseUrl);
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${authToken}`,
       "Content-Type": "application/json",

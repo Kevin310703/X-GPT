@@ -4,17 +4,21 @@ import { useModel } from "@/components/provider/model-provider";
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { queryStableDiffusion, queryVietAI } from "@/app/data/services/model-service";
+import { getStrapiURL } from "@/lib/utils";
 
 interface ChatMessage {
     user_question: string;
     chatbot_response: string;
 }
 
+const baseUrl = getStrapiURL();
+
 async function uploadImage(blob: Blob): Promise<string> {
     const formData = new FormData();
     formData.append("files", blob);
 
-    const response = await fetch("http://localhost:1337/api/upload", {
+    const url = new URL("/api/upload", baseUrl);
+    const response = await fetch(url, {
         method: "POST",
         body: formData,
     });
@@ -214,16 +218,18 @@ export default function Chatting() {
     const fetchChatMessages = async (chatId: string) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:1337/api/chat-sessions/${chatId}`);
+            const url_chat_session = new URL(`/api/chat-sessions/${chatId}`, baseUrl);
+            const response = await fetch(url_chat_session);
             const result = await response.json();
 
             if (result.data && result.data.chat_messages) {
                 // Cập nhật chatbot_response nếu là đường dẫn tương đối
+                
                 const updatedMessages = result.data.chat_messages.map((message: ChatMessage) => {
                     if (message.chatbot_response.startsWith("/uploads/")) {
                         return {
                             ...message,
-                            chatbot_response: `http://localhost:1337${message.chatbot_response}`,
+                            chatbot_response: `${baseUrl}${message.chatbot_response}`,
                         };
                     }
                     return message;
@@ -337,7 +343,8 @@ export default function Chatting() {
         };
 
         try {
-            const response = await fetch(`http://localhost:1337/api/chat-messages`, {
+            const url_chat_messages = new URL("`/api/chat-messages`", baseUrl);
+            const response = await fetch(url_chat_messages, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
