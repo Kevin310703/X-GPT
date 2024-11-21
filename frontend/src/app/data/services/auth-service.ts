@@ -57,7 +57,13 @@ export async function loginUserService(userData: LoginUserProps) {
       cache: "no-cache",
     });
 
-    return response.json();
+    // Đợi kết quả JSON
+    const data = await response.json();
+
+    // Hiển thị JWT trong console
+    console.log(data.jwt);
+
+    return data;
   } catch (error) {
     console.error("Login Service Error:", error);
     throw error;

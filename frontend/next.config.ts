@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        // protocol: "https",
+        // hostname: "api.xgpt.io.vn",
         protocol: "http",
         hostname: "localhost",
         port: "1337",

@@ -13,7 +13,7 @@ const config = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
 };
-
+console.log(process.env.HOST)
 // Register
 const schemaRegister = z.object({
   username: z
@@ -68,6 +68,8 @@ export async function registerUserAction(prevState: any, formData: FormData) {
 
   const { confirm_password, ...userData } = validatedFields.data;
   const responseData = await registerUserService(userData);
+
+  console.log(responseData)
 
   if (!responseData) {
     return {

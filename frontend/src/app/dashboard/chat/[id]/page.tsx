@@ -343,7 +343,7 @@ export default function Chatting() {
         };
 
         try {
-            const url_chat_messages = new URL("`/api/chat-messages`", baseUrl);
+            const url_chat_messages = new URL("/api/chat-messages", baseUrl);
             const response = await fetch(url_chat_messages, {
                 method: "POST",
                 headers: {
