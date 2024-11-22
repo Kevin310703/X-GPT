@@ -27,9 +27,10 @@ export async function createChatSessionService(title: string, userId: string, au
                 Authorization: `Bearer ${authToken}`,
             },
             body: JSON.stringify({
-                data: { title,
+                data: {
+                    title,
                     users_permissions_user: userId,
-                 }, // Đúng cấu trúc JSON Strapi yêu cầu
+                }, // Đúng cấu trúc JSON Strapi yêu cầu
             }),
             cache: "no-cache",
         });

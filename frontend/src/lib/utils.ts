@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getStrapiURL() {
-  return process.env.STRAPI_URL  ?? "https://api.xgpt.io.vn";
+  // return process.env.STRAPI_URL  ?? "https://api.xgpt.io.vn";
+  return process.env.STRAPI_URL  ?? "http://localhost:1337";
 }
 
 export function getStrapiMedia(url: string | null) {
