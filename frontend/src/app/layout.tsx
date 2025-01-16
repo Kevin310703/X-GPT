@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/custom/header";
 import { Footer } from "@/components/custom/footer";
-import { fetchChatSessions, getGlobalPageMetadata } from "@/app/data/loaders";
+import { fetchChatSessionsByDocumentId, getGlobalPageMetadata } from "@/app/data/loaders";
 import { getUserMeLoader } from "./data/services/get-user-me-loader";
 import { ModelProvider } from "@/components/provider/model-provider";
 import Link from "next/link";
@@ -119,7 +119,7 @@ export default async function RootLayout({
   // Kiểm tra trạng thái user và authToken
   const isAuthenticated = authToken && user?.ok;
 
-  const chatSessions = await fetchChatSessions(authToken);
+  const chatSessions = await fetchChatSessionsByDocumentId(authToken, user?.data.documentId);
   const sortedChats = classifyChatsByDate(chatSessions);
 
   return (
@@ -130,7 +130,7 @@ export default async function RootLayout({
         <ModelProvider>
           <ChatProvider>
             {isAuthenticated ? (
-              <><ChatManager authToken={authToken} />
+              <><ChatManager authToken={authToken} documentId={user.data.documentId} />
                 <div className="flex h-screen overflow-hidden">
                   {/* Sidebar */}
                   <aside className="w-80 bg-white text-gray-800 h-screen flex flex-col shadow-lg p-3">
@@ -142,7 +142,7 @@ export default async function RootLayout({
                       </Link>
                     </div>
 
-                    <NewChatButton authToken={authToken ?? ""} userId={user.data.id} />
+                    <NewChatButton authToken={authToken ?? ""} documentId={user.data.documentId} userId={user.data.id} />
 
                     <div className="flex-1 overflow-y-auto mt-4">
                       {/* Hiển thị lịch sử chat khi có dữ liệu */}
@@ -172,7 +172,7 @@ export default async function RootLayout({
                     <div className="flex items-center gap-3 mt-6">
                       <Link href={`/dashboard/account/${user.data.documentId}`} passHref>
                         <div className="flex items-center mr-28 gap-2">
-                          <img src={baseUrl + `${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full" />
+                          <img src={baseUrl + `${user.data?.image?.url}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
                           <div className="flex-1">
                             <p className="font-semibold">{user.data.username}</p>
                           </div>

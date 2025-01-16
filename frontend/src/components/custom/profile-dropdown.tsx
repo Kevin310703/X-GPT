@@ -38,7 +38,7 @@ export default function ProfileDropdown({ user, logoutAction }: { user: any; log
         <img
           src={baseUrl + `${user.data?.image?.url}`}
           alt="Profile"
-          className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-md hover:border-blue-500 transition-all duration-300"
+          className="w-10 h-10 rounded-full border-2 border-gray-300 shadow-md object-cover hover:border-blue-500 transition-all duration-300"
         />
       </button>
 

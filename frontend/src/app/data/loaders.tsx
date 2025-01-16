@@ -33,8 +33,8 @@ export async function getGlobalPageMetadata() {
   return await fetchData(url.href);
 }
 
-export async function fetchChatSessions(authToken: string) {
-  const url = new URL("/api/chat-sessions", baseUrl);
+export async function fetchChatSessionsByDocumentId(authToken: string, documentId:string) {
+  const url = new URL(`/api/chat-sessions?filters[users_permissions_user][id][$eq]=${documentId}&populate=users_permissions_user`, baseUrl);
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${authToken}`,

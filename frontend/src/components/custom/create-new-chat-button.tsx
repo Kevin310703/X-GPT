@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { createChatSessionService } from "@/app/data/services/chat-service";
-import { fetchChatSessions } from "@/app/data/loaders";
+import { fetchChatSessionsByDocumentId } from "@/app/data/loaders";
 
-const NewChatButton = ({ authToken, userId }: { authToken: string, userId: string }) => {
+const NewChatButton = ({ authToken, documentId, userId }: { authToken: string, documentId:string, userId: string }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -16,7 +16,7 @@ const NewChatButton = ({ authToken, userId }: { authToken: string, userId: strin
         try {
             const newChat = await createChatSessionService("New chat", userId, authToken);
             console.log("New Chat Session Created:", newChat);
-            fetchChatSessions(authToken); // Cập nhật danh sách Chat Sessions
+            fetchChatSessionsByDocumentId(authToken, documentId); // Cập nhật danh sách Chat Sessions
             setSuccessMessage('Created new chat successfully!'); // Hiển thị thông báo thành công
             setErrorMessage(null);
 
@@ -35,7 +35,7 @@ const NewChatButton = ({ authToken, userId }: { authToken: string, userId: strin
 
     useEffect(() => {
         if (authToken) {
-            fetchChatSessions(authToken);
+            fetchChatSessionsByDocumentId(authToken, documentId);
         }
     }, [authToken]);
 

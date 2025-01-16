@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { useChat } from "@/components/provider/chat-provider";
-import { fetchChatSessions } from "@/app/data/loaders";
+import { fetchChatSessionsByDocumentId } from "@/app/data/loaders";
 
-const ChatManager = ({ authToken }: { authToken: string }) => {
+const ChatManager = ({ authToken, documentId }: { authToken: string, documentId: string }) => {
   const { setChatSessions } = useChat();
 
   useEffect(() => {
     const loadChatSessions = async () => {
-      const chatSessions = await fetchChatSessions(authToken);
+      const chatSessions = await fetchChatSessionsByDocumentId(authToken, documentId);
       setChatSessions(chatSessions);
     };
 

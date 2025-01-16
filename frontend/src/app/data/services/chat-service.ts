@@ -2,6 +2,7 @@ import { getStrapiURL } from "@/lib/utils";
 
 const baseUrl = getStrapiURL();
 
+
 // Define the type of a single chat session
 interface ChatSession {
     id: string | number;
@@ -146,8 +147,8 @@ export async function deleteChatSessionService(sessionId: string, authToken: str
     }
 }
 
-export async function fetchChatSessionId(authToken: string): Promise<string[]> {
-    const url = new URL(`/api/chat-sessions`, baseUrl);
+export async function fetchChatSessionByDocumentId(authToken: string, documentId: string): Promise<string[]> {
+    const url = new URL(`/api/chat-sessions?filters[users_permissions_user][id][$eq]=${documentId}&populate=users_permissions_user`, baseUrl);
 
     try {
         const response = await fetch(url, {
@@ -177,9 +178,9 @@ export async function fetchChatSessionId(authToken: string): Promise<string[]> {
     }
 }
 
-export async function deleteAllChatSessions(authToken: string): Promise<void> {
+export async function deleteAllChatSessions(authToken: string, documentId: string): Promise<void> {
     try {
-        const sessionIds = await fetchChatSessionId(authToken);
+        const sessionIds = await fetchChatSessionByDocumentId(authToken, documentId);
 
         console.log(sessionIds)
 
